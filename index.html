@@ -1,31 +1,65 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <!-- [Tag Meta, Title, dan style CSS SAMA PERSIS seperti sebelumnya] -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PT. HSSI - Production System</title>
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { background-color: #f4f6f9; overflow-x: hidden; }
-        #loginScreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .login-card { background: white; padding: 40px; border-radius: 10px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .sidebar { height: 100vh; width: 70px; position: fixed; top: 0; left: 0; background-color: #212529; transition: 0.3s; z-index: 1000; white-space: nowrap; overflow: hidden; }
-        .sidebar:hover { width: 250px; }
-        .sidebar a { color: white; text-decoration: none; display: flex; align-items: center; padding: 15px 20px; transition: 0.2s; cursor: pointer;}
-        .sidebar a:hover, .sidebar a.active { background-color: #0d6efd; }
-        .sidebar a i { font-size: 1.5rem; min-width: 40px; }
-        .sidebar a span { margin-left: 10px; opacity: 0; transition: opacity 0.3s; }
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        
+        /* Layar Login */
+        #loginScreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 380px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+
+        /* Sidebar Modern (Tidak Kaku) */
+        .sidebar {
+            height: 100vh; width: 70px; position: fixed; top: 0; left: 0;
+            background-color: #1e222b; /* Warna gelap yang lebih soft */
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000; white-space: nowrap; overflow: hidden;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar:hover { width: 230px; }
+        
+        .sidebar-brand {
+            padding: 15px 0; color: #fff; display: flex; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px;
+        }
+        .sidebar-brand i { font-size: 1.4rem; min-width: 70px; text-align: center; color: #4dabf7; }
+        .sidebar-brand span { font-weight: 600; font-size: 1.1rem; letter-spacing: 0.5px; opacity: 0; transition: 0.3s; }
+        .sidebar:hover .sidebar-brand span { opacity: 1; }
+
+        .sidebar a {
+            color: #aeb4c0; text-decoration: none; display: flex; align-items: center;
+            padding: 12px 0; font-size: 0.9rem; transition: all 0.2s ease;
+            border-left: 3px solid transparent; cursor: pointer; margin-bottom: 2px;
+        }
+        .sidebar a i { font-size: 1.2rem; min-width: 70px; text-align: center; }
+        .sidebar a span { opacity: 0; transition: opacity 0.3s; }
         .sidebar:hover a span { opacity: 1; }
-        .main-content { margin-left: 70px; padding: 20px; transition: 0.3s; display: none; }
-        .status-badge { font-weight: bold; padding: 5px 10px; border-radius: 5px; text-transform: uppercase; font-size: 0.8rem; }
-        .bg-wait { background-color: #e9ecef; color: #495057; }
+        
+        /* Efek Hover & Active yang lebih elegan */
+        .sidebar a:hover { color: #fff; background-color: rgba(255,255,255,0.05); }
+        .sidebar a.active {
+            color: #fff; 
+            background-color: rgba(77, 171, 247, 0.08); /* Highlight sangat transparan */
+            border-left: 3px solid #4dabf7; /* Indikator garis di kiri */
+        }
+        .sidebar a.text-danger:hover { background-color: rgba(220, 53, 69, 0.1); color: #ff6b6b !important; }
+
+        /* Konten Utama */
+        .main-content { margin-left: 70px; padding: 25px; transition: 0.3s; display: none; }
+        .status-badge { font-weight: 600; padding: 5px 12px; border-radius: 6px; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;}
+        .bg-wait { background-color: #f1f3f5; color: #495057; }
         .bg-onproses { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;}
         .bg-finish { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc;}
-        .table-hover tbody tr { cursor: pointer; }
+        .table-hover tbody tr { cursor: pointer; transition: 0.2s; }
+        .table-hover tbody tr:hover { background-color: #f8f9fa; }
     </style>
 </head>
 <body>
@@ -33,14 +67,14 @@
     <!-- SCREEN LOGIN -->
     <div id="loginScreen">
         <div class="login-card text-center">
-            <h3 class="fw-bold text-primary mb-1">PT. HSSI</h3>
-            <p class="text-muted mb-4">Production Report System</p>
+            <h4 class="fw-bold text-primary mb-1">PT. HSSI</h4>
+            <p class="text-muted mb-4 small">Production Report System</p>
             
-            <form id="loginForm" onsubmit="handleLogin(event)">
+            <form id="loginForm">
                 <div class="mb-3 text-start">
-                    <label class="form-label fw-bold small">Pilih Line Mesin</label>
-                    <select class="form-select" id="loginLine" required>
-                        <option value="" disabled selected>-- Pilih Lokasi Kerja --</option>
+                    <label class="form-label fw-bold small text-secondary">Pilih Lokasi Kerja</label>
+                    <select class="form-select form-select-sm" id="loginLine" required>
+                        <option value="" disabled selected>-- Pilih Line --</option>
                         <option value="SL1">Slitter 1 (SL1)</option>
                         <option value="SL2">Slitter 2 (SL2)</option>
                         <option value="SM1">Shear Line 1 (SM1)</option>
@@ -48,56 +82,68 @@
                     </select>
                 </div>
                 <div class="mb-4 text-start">
-                    <label class="form-label fw-bold small">User ID / PIN</label>
-                    <!-- Menggunakan type password agar aman dan terkoneksi ke database -->
-                    <input type="password" class="form-control" id="loginUserId" placeholder="Masukkan ID atau PIN Anda" required>
+                    <label class="form-label fw-bold small text-secondary">User ID / PIN</label>
+                    <input type="password" class="form-control form-control-sm" id="loginUserId" placeholder="Masukkan PIN" required>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 fw-bold" id="btnLogin">Masuk <i class="bi bi-box-arrow-in-right"></i></button>
+                <button type="button" class="btn btn-primary w-100 fw-bold shadow-sm" id="btnLogin" onclick="handleLogin()">
+                    Masuk <i class="bi bi-arrow-right-short fs-5 align-middle"></i>
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- SIDEBAR (Diberikan ID agar bisa dikontrol aksesnya) -->
+    <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
-        <div class="text-center py-3 text-white border-bottom border-secondary">
-            <i class="bi bi-boxes fs-3"></i>
-            <span class="fw-bold fs-5 ms-2">HSSI Sys</span>
+        <div class="sidebar-brand">
+            <i class="bi bi-boxes"></i><span>HSSI Sys</span>
         </div>
         <a id="nav-live" class="active" onclick="switchTab('live')"><i class="bi bi-display"></i><span>Live Production</span></a>
         <a id="nav-history" onclick="switchTab('history')"><i class="bi bi-search"></i><span>History & Correction</span></a>
         <a id="nav-dashboard" onclick="switchTab('dashboard')"><i class="bi bi-graph-up-arrow"></i><span>Summary Report</span></a>
         <a id="nav-plan" onclick="switchTab('plan')"><i class="bi bi-calendar3"></i><span>Master Planning</span></a>
         
-        <a class="text-danger mt-5" onclick="logout()"><i class="bi bi-power"></i><span>Keluar / Ganti Akun</span></a>
+        <a class="text-danger mt-4 border-0" onclick="logout()"><i class="bi bi-power"></i><span>Keluar / Ganti Akun</span></a>
     </div>
 
-    <!-- [MAIN CONTENT DAN MODAL TETAP SAMA SEPERTI SEBELUMNYA] -->
-    <!-- (Untuk menghemat respon, silakan gunakan div "main-content" dan "modal" dari kode saya sebelumnya di sini) -->
-    
-    <!-- MAIN CONTENT KOPAS DI SINI -->
+    <!-- MAIN CONTENT -->
     <div class="main-content" id="mainContent">
+        <!-- HEADER -->
         <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm border-start border-primary border-4">
             <div>
-                <h4 class="mb-0 text-primary" id="pageTitle">Live Production</h4>
-                <small class="text-muted">User: <span id="displayMember" class="fw-bold"></span> | Role: <span id="displayRole" class="badge bg-info"></span></small>
+                <h5 class="mb-1 text-primary fw-bold" id="pageTitle">Live Production</h5>
+                <small class="text-muted">User: <span id="displayMember" class="fw-bold text-dark"></span> | Role: <span id="displayRole" class="badge bg-info text-dark"></span></small>
             </div>
             <div class="text-end">
-                <span class="badge bg-secondary fs-6 me-2" id="shiftDisplay">Shift: -</span>
-                <span class="fw-bold text-dark fs-5" id="clockDisplay">00:00</span>
+                <span class="badge bg-light text-dark border fs-6 me-2" id="shiftDisplay">Shift: -</span>
+                <span class="fw-bold text-dark fs-4 font-monospace" id="clockDisplay">00:00</span>
             </div>
         </div>
 
+        <!-- TAB: LIVE PRODUCTION -->
         <div id="tab-live" class="tab-pane active">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-3">
-                        <button class="btn btn-primary btn-sm" onclick="fetchLiveData()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-                        <input type="text" class="form-control form-control-sm w-25" id="searchInput" placeholder="Cari Packing No / Spec..." onkeyup="filterTable()">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button class="btn btn-primary btn-sm px-3 shadow-sm" onclick="fetchLiveData()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                        <div class="input-group input-group-sm w-25">
+                            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control border-start-0 ps-0" id="searchInput" placeholder="Cari Packing No..." onkeyup="filterTable()">
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover align-middle" id="liveTable">
-                            <thead class="table-dark">
-                                <tr><th>Status</th><th>Seq</th><th>Packing No</th><th>Customer</th><th>Spec / Size</th><th>Start</th><th>End</th></tr>
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Seq</th>
+                                    <th>Packing No</th>
+                                    <th>Customer</th>
+                                    <th>Spec / Size</th>
+                                    <th class="text-center">Start</th>
+                                    <th class="text-center">End</th>
+                                </tr>
                             </thead>
                             <tbody id="tableBody"></tbody>
                         </table>
@@ -105,14 +151,120 @@
                 </div>
             </div>
         </div>
-        <div id="tab-history" class="tab-pane d-none"><h5>History & Correction (Under Construction)</h5></div>
-        <div id="tab-dashboard" class="tab-pane d-none"><h5>Summary Dashboard (Under Construction)</h5></div>
-        <div id="tab-plan" class="tab-pane d-none"><h5>Master Planning (Under Construction)</h5></div>
+        
+        <!-- PENGGANTI TAB LAINNYA -->
+        <div id="tab-history" class="tab-pane d-none"><div class="alert alert-secondary border-0"><i class="bi bi-tools"></i> Fitur Pencarian & Koreksi Data dalam pengembangan...</div></div>
+        <div id="tab-dashboard" class="tab-pane d-none"><div class="alert alert-secondary border-0"><i class="bi bi-tools"></i> Dashboard Rekapitulasi dalam pengembangan...</div></div>
+        <div id="tab-plan" class="tab-pane d-none"><div class="alert alert-secondary border-0"><i class="bi bi-tools"></i> Tabel Master Planning dalam pengembangan...</div></div>
     </div>
 
-    <!-- (Gunakan blok Modal Pop-Up form persis dari kode sebelumnya di sini) -->
+    <!-- MODAL POP-UP FORM -->
+    <div class="modal fade" id="productionModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h6 class="modal-title fw-bold">Input Production Report</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <!-- Info Panel (Read Only) -->
+                    <div class="row mb-3 bg-white p-2 rounded border shadow-sm mx-0">
+                        <div class="col-md-6 border-end">
+                            <label class="form-label text-muted" style="font-size: 0.7rem; margin-bottom:0;">PACKING NO</label>
+                            <div class="fw-bold fs-6" id="m_packing_no">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted" style="font-size: 0.7rem; margin-bottom:0;">CUSTOMER / SIZE</label>
+                            <div class="fw-bold text-primary fs-6" id="m_customer_size">-</div>
+                        </div>
+                    </div>
+                    
+                    <form id="prodForm">
+                        <input type="hidden" id="input_packing_no">
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Actual Width MC</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm" id="actual_width_mc">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Weight Aktual</label>
+                                <input type="number" class="form-control form-control-sm" id="weight_actual">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">ID Coil</label>
+                                <input type="text" class="form-control form-control-sm" id="id_coil">
+                            </div>
+                        </div>
 
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4" id="div_coil_set_lifter">
+                                <label class="form-label fw-bold small">Coil Set Lifter</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="time" class="form-control" id="time_coil_set_lifter">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="setTimeNow('time_coil_set_lifter')"><i class="bi bi-clock"></i></button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Start Proses</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="time" class="form-control" id="time_start_proses">
+                                    <button class="btn btn-outline-primary" type="button" onclick="setTimeNow('time_start_proses')"><i class="bi bi-clock"></i></button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">End Proses (Finish)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="time" class="form-control" id="time_end_proses">
+                                    <button class="btn btn-outline-success" type="button" onclick="setTimeNow('time_end_proses')"><i class="bi bi-clock"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Downtime -->
+                        <div class="card border-warning mb-3 shadow-sm">
+                            <div class="card-header bg-warning bg-opacity-25 text-dark fw-bold py-2" style="font-size: 0.85rem;">
+                                <i class="bi bi-exclamation-triangle"></i> Downtime (Menit)
+                            </div>
+                            <div class="card-body row g-2 py-2">
+                                <div class="col-md-3">
+                                    <label class="small text-secondary">Machine Problem</label>
+                                    <input type="number" class="form-control form-control-sm" id="dt_machine_problem">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small text-secondary">Waiting Crane</label>
+                                    <input type="number" class="form-control form-control-sm" id="dt_waiting_crane">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small text-secondary">Waiting Hagumi</label>
+                                    <input type="number" class="form-control form-control-sm" id="dt_waiting_hagumi">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small text-secondary">Cleaning Mesin</label>
+                                    <input type="number" class="form-control form-control-sm" id="dt_cleaning_mesin">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label fw-bold small">Remark / Catatan Tambahan</label>
+                            <textarea class="form-control form-control-sm" id="remark" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light border-0 justify-content-between">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary btn-sm px-4 shadow-sm" id="btnSubmitForm" onclick="submitData()">
+                        <i class="bi bi-save"></i> Simpan Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbyDqs9u-4rMnE8vCN-4le7naWOHXbwyCOQjcIxr4YSKMaq6Z0WhzmvefYu6Ji3mxPud/exec';
         
@@ -120,13 +272,18 @@
         let sessionLine = '';
         let sessionMember = '';
         let sessionRole = '';
+        const modalInstance = new bootstrap.Modal(document.getElementById('productionModal'));
 
-        // ================== LOGIKA LOGIN & SESSION ==================
-        function handleLogin(e) {
-            e.preventDefault();
+        // ================== LOGIKA LOGIN SANGAT AMAN ==================
+        function handleLogin() {
             const btn = document.getElementById('btnLogin');
             const userId = document.getElementById('loginUserId').value;
             sessionLine = document.getElementById('loginLine').value;
+            
+            if(!userId || !sessionLine) {
+                Swal.fire('Perhatian', 'Harap isi Line dan User ID.', 'warning');
+                return;
+            }
             
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Verifikasi...';
             btn.disabled = true;
@@ -135,68 +292,67 @@
                 method: 'POST',
                 body: JSON.stringify({ action: 'login', user_id: userId })
             })
-            .then(res => res.json())
-            .then(res => {
-                if(res.status === 'success') {
-                    // Set Data Sesi
-                    sessionMember = res.user.nama_member;
-                    sessionRole = res.user.role;
+            .then(res => res.text()) // Ambil bentuk teks mentahnya dulu untuk mencegah error JSON
+            .then(text => {
+                try {
+                    const res = JSON.parse(text); // Coba ubah ke JSON
                     
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('mainContent').style.display = 'block';
-                    
-                    document.getElementById('displayMember').innerText = sessionMember;
-                    document.getElementById('displayRole').innerText = sessionRole;
-                    
-                    // ATUR HAK AKSES TAMPILAN TAB
-                    applyRoleRestrictions(sessionRole);
-                    
-                    // Tarik data jadwal
-                    if(sessionLine !== 'OFFICE') {
-                        switchTab('live');
-                        fetchLiveData(); 
+                    if(res.status === 'success') {
+                        sessionMember = res.user.nama_member;
+                        sessionRole = res.user.role;
+                        
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('mainContent').style.display = 'block';
+                        
+                        document.getElementById('displayMember').innerText = sessionMember;
+                        document.getElementById('displayRole').innerText = sessionRole;
+                        document.getElementById('pageTitle').innerText = `Live Production (${sessionLine})`;
+                        
+                        applyRoleRestrictions(sessionRole);
+                        
+                        if(sessionLine !== 'OFFICE') {
+                            switchTab('live');
+                            fetchLiveData(); 
+                        } else {
+                            switchTab('dashboard');
+                        }
                     } else {
-                        switchTab('dashboard'); // Jika orang kantor, langsung arahkan ke Dashboard
+                        Swal.fire('Akses Ditolak', res.message, 'error');
                     }
-                    
-                } else {
-                    Swal.fire('Akses Ditolak', res.message, 'error');
+                } catch (e) {
+                    // Jika script GAS error/crash (misal ID Spreadsheet salah), ia akan mengirim teks HTML, bukan JSON.
+                    console.error("RAW Data dari GAS:", text);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Backend Error',
+                        text: 'Server gagal memproses. Pastikan SPREADSHEET_ID sudah Anda ganti di Apps Script, dan sheet "db_users" tersedia.',
+                        footer: 'Cek Console F12 untuk detailnya.'
+                    });
                 }
             })
-            .catch(err => Swal.fire('Error', 'Gagal menghubungi server.', 'error'))
+            .catch(err => {
+                Swal.fire('Koneksi Gagal', 'Gagal menghubungi server.', 'error');
+            })
             .finally(() => {
-                btn.innerHTML = 'Masuk <i class="bi bi-box-arrow-in-right"></i>';
+                btn.innerHTML = 'Masuk <i class="bi bi-arrow-right-short fs-5 align-middle"></i>';
                 btn.disabled = false;
             });
         }
 
         // ================== LOGIKA HAK AKSES ==================
         function applyRoleRestrictions(role) {
-            // Sembunyikan semua tab terlebih dahulu
             document.getElementById('nav-live').style.display = 'none';
             document.getElementById('nav-history').style.display = 'none';
             document.getElementById('nav-dashboard').style.display = 'none';
             document.getElementById('nav-plan').style.display = 'none';
 
-            let roleUpper = role.toUpperCase();
-
-            // Aturan penampakan tab (Bisa Anda sesuaikan)
-            if (roleUpper.includes('ADMIN') || roleUpper.includes('LEADER')) {
-                // Admin / Leader bisa melihat semua
-                document.getElementById('nav-live').style.display = 'flex';
-                document.getElementById('nav-history').style.display = 'flex';
-                document.getElementById('nav-dashboard').style.display = 'flex';
-                document.getElementById('nav-plan').style.display = 'flex';
-            } 
-            else if (roleUpper.includes('PLANNING')) {
-                // Planning fokus ke rencana dan summary
-                document.getElementById('nav-dashboard').style.display = 'flex';
-                document.getElementById('nav-plan').style.display = 'flex';
-            } 
-            else {
-                // Default: Operator (Hanya Produksi & Koreksi Laporan)
-                document.getElementById('nav-live').style.display = 'flex';
-                document.getElementById('nav-history').style.display = 'flex';
+            let r = role.toUpperCase();
+            if (r.includes('ADMIN') || r.includes('LEADER')) {
+                ['nav-live', 'nav-history', 'nav-dashboard', 'nav-plan'].forEach(id => document.getElementById(id).style.display = 'flex');
+            } else if (r.includes('PLANNING')) {
+                ['nav-dashboard', 'nav-plan'].forEach(id => document.getElementById(id).style.display = 'flex');
+            } else {
+                ['nav-live', 'nav-history'].forEach(id => document.getElementById(id).style.display = 'flex');
             }
         }
 
@@ -204,11 +360,155 @@
             sessionLine = ''; sessionMember = ''; sessionRole = '';
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('mainContent').style.display = 'none';
-            document.getElementById('loginForm').reset();
+            document.getElementById('loginUserId').value = '';
         }
 
-        // [SISA SCRIPT: updateClock, switchTab, fetchLiveData, renderTable, modal, dll SAMA SEPERTI SEBELUMNYA]
-        // (Pastikan function dari index.html sebelumnya dimasukkan di bawah sini)
+        // ================== JAM & TAB ==================
+        setInterval(updateClock, 1000);
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clockDisplay').innerText = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            let shift = (now.getHours() >= 8 && now.getHours() < 20) ? 'A' : 'B';
+            document.getElementById('shiftDisplay').innerText = `Shift: ${shift}`;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('d-none'));
+            document.getElementById('tab-' + tabId).classList.remove('d-none');
+            document.querySelectorAll('.sidebar a').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        // ================== FETCH DATA ==================
+        function fetchLiveData() {
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-secondary"><div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>Menarik jadwal dari Line ${sessionLine}...</td></tr>`;
+            
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getLiveProduction', line: sessionLine }) 
+            })
+            .then(res => res.text())
+            .then(text => {
+                try {
+                    const res = JSON.parse(text);
+                    if(res.status === 'success') {
+                        globalData = res.data;
+                        renderTable(globalData);
+                    } else {
+                        document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><i class="bi bi-x-circle fs-3"></i><br>${res.message}</td></tr>`;
+                    }
+                } catch(e) {
+                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><b>Error Database:</b><br>Terdapat kesalahan di Google Script. Pastikan nama Sheet Plan benar.</td></tr>`;
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        function renderTable(dataArray) {
+            let tbody = '';
+            dataArray.forEach(item => {
+                let p = item.plan_data;
+                let bgClass = item.status === 'Wait Proses' ? 'bg-wait' : item.status === 'On Proses' ? 'bg-onproses' : 'bg-finish';
+                let startT = item.prod_details.time_start_proses ? formatTimeShow(item.prod_details.time_start_proses) : '--:--';
+                let endT = item.prod_details.time_end_proses ? formatTimeShow(item.prod_details.time_end_proses) : '--:--';
+
+                tbody += `
+                    <tr onclick="openModal('${p.packing_no}')" title="Klik baris untuk edit data">
+                        <td class="text-center"><span class="status-badge ${bgClass}">${item.status}</span></td>
+                        <td class="text-center">${p.seq}</td>
+                        <td class="fw-bold text-primary">${p.packing_no}</td>
+                        <td>${p.customer}</td>
+                        <td><small>${p.spec}<br><b>${p.size}</b></small></td>
+                        <td class="text-center">${startT}</td>
+                        <td class="text-center">${endT}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('tableBody').innerHTML = tbody || '<tr><td colspan="7" class="text-center text-secondary py-4">Tidak ada antrean hari ini.</td></tr>';
+        }
+
+        function formatTimeShow(isoString) {
+            try { let d = new Date(isoString); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } 
+            catch(e) { return isoString; }
+        }
+
+        // ================== LOGIKA MODAL FORM ==================
+        function openModal(packingNo) {
+            const item = globalData.find(x => x.plan_data.packing_no === packingNo);
+            if(!item) return;
+
+            document.getElementById('prodForm').reset();
+            document.getElementById('m_packing_no').innerText = item.plan_data.packing_no;
+            document.getElementById('m_customer_size').innerText = `${item.plan_data.customer} | ${item.plan_data.size}`;
+            document.getElementById('input_packing_no').value = item.plan_data.packing_no;
+
+            if(item.status === 'Wait Proses') {
+                setTimeNow('time_start_proses');
+                document.getElementById('div_coil_set_lifter').style.display = 'none'; 
+            } else {
+                document.getElementById('div_coil_set_lifter').style.display = 'block'; 
+                let pd = item.prod_details;
+                const fields = ['actual_width_mc', 'weight_actual', 'id_coil', 'remark', 'dt_machine_problem', 'dt_waiting_crane', 'dt_waiting_hagumi', 'dt_cleaning_mesin'];
+                fields.forEach(f => { if(pd[f]) document.getElementById(f).value = pd[f]; });
+
+                if(pd.time_coil_set_lifter) document.getElementById('time_coil_set_lifter').value = formatTimeShow(pd.time_coil_set_lifter);
+                if(pd.time_start_proses) document.getElementById('time_start_proses').value = formatTimeShow(pd.time_start_proses);
+                if(pd.time_end_proses) document.getElementById('time_end_proses').value = formatTimeShow(pd.time_end_proses);
+            }
+            modalInstance.show();
+        }
+
+        function setTimeNow(inputId) {
+            const now = new Date();
+            document.getElementById(inputId).value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
+        // ================== SUBMIT KE GAS ==================
+        function submitData() {
+            const payload = {
+                line_produksi: sessionLine,
+                line_member: sessionMember,
+                packing_no: document.getElementById('input_packing_no').value,
+                actual_width_mc: document.getElementById('actual_width_mc').value,
+                weight_actual: document.getElementById('weight_actual').value,
+                id_coil: document.getElementById('id_coil').value,
+                time_coil_set_lifter: document.getElementById('time_coil_set_lifter').value,
+                time_start_proses: document.getElementById('time_start_proses').value,
+                time_end_proses: document.getElementById('time_end_proses').value,
+                dt_machine_problem: document.getElementById('dt_machine_problem').value,
+                dt_waiting_crane: document.getElementById('dt_waiting_crane').value,
+                dt_waiting_hagumi: document.getElementById('dt_waiting_hagumi').value,
+                dt_cleaning_mesin: document.getElementById('dt_cleaning_mesin').value,
+                remark: document.getElementById('remark').value
+            };
+
+            const btn = document.getElementById('btnSubmitForm');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
+            btn.disabled = true;
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'upsertData', data: payload })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    modalInstance.hide();
+                    Swal.fire({ icon: 'success', title: 'Tersimpan!', text: res.message, timer: 1500, showConfirmButton: false });
+                    fetchLiveData(); 
+                } else { Swal.fire('Error Backend', res.message, 'error'); }
+            })
+            .catch(err => { Swal.fire('Gagal Jaringan', 'Periksa koneksi internet.', 'error'); })
+            .finally(() => { btn.innerHTML = '<i class="bi bi-save"></i> Simpan Data'; btn.disabled = false; });
+        }
+
+        function filterTable() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            let rows = document.querySelectorAll('#tableBody tr');
+            rows.forEach(row => { row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none'; });
+        }
+        
+        updateClock();
     </script>
 </body>
 </html>
