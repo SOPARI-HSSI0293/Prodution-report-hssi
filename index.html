@@ -3,63 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PT. HSSI - Production System</title>
+    <title>PR HSSI - Production Report</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
-        
-        /* Layar Login */
-        #loginScreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 380px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+        :root {
+            --primary: #4f46e5;       /* Indigo - aksen utama */
+            --primary-light: #eef2ff;
+            --primary-dark: #4338ca;
+            --sidebar-bg: #171923;    /* Gelap netral, bukan biru tua */
+            --sidebar-text: #e2e4ea;
+            --bg: #f7f8fa;
+            --card-border: #eef0f3;
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --radius: 14px;
+        }
 
-        /* Sidebar Modern (Tidak Kaku) */
+        * { font-family: 'Inter', 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); overflow-x: hidden; color: var(--text-dark); }
+
+        /* Layar Login */
+        #loginScreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(145deg, #171923 0%, #2d3142 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .login-card { background: white; padding: 44px 40px; border-radius: 20px; width: 100%; max-width: 380px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); }
+        .login-card h4 { color: var(--text-dark) !important; font-weight: 800; letter-spacing: -0.5px; }
+        .login-card .form-select, .login-card .form-control { border-radius: 10px; border-color: #e5e7eb; padding: 10px 12px; }
+        .login-card .form-select:focus, .login-card .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+        /* #loginScreen pakai z-index 9999 supaya selalu di atas konten lain.
+           Popup/modal Bootstrap defaultnya z-index jauh lebih rendah, jadi kalau ada modal
+           yang perlu dibuka SAAT loginScreen masih tampil (mis. popup pilih Line), modal itu
+           harus dipaksa lebih tinggi dari 9999 -- kalau tidak, modal jadi tersembunyi di
+           belakang loginScreen dan menahan fokus keyboard (field lain jadi tidak bisa diisi). */
+        .modal-backdrop { z-index: 10040; }
+        .modal { z-index: 10050; }
+
+        /* Field pemicu popup pilih Line (menggantikan <select> statis) */
+        .line-picker-field {
+            display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px;
+            font-size: 0.875rem; cursor: pointer; background: #fff; color: var(--text-dark);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .line-picker-field:hover { border-color: var(--primary); }
+        .line-picker-field.is-selected span { color: var(--text-dark); font-weight: 600; }
+
+        /* Grid kartu Line/Departemen di dalam popup */
+        .line-card-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .line-card {
+            flex: 1 1 calc(50% - 10px); min-width: 130px; border: 1.5px solid #e5e7eb; border-radius: 12px;
+            padding: 14px 10px; text-align: center; cursor: pointer; background: #fff;
+            font-weight: 700; font-size: 0.85rem; color: var(--text-dark);
+            transition: all 0.15s;
+        }
+        .line-card i { display: block; font-size: 1.3rem; margin-bottom: 6px; color: var(--primary); }
+        .line-card:hover { border-color: var(--primary); background: var(--primary-light); transform: translateY(-2px); }
+        .line-card.active { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-light); }
+
+        /* Sidebar Modern & Simple */
         .sidebar {
-            height: 100vh; width: 70px; position: fixed; top: 0; left: 0;
-            background-color: #1e222b; /* Warna gelap yang lebih soft */
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 100vh; width: 72px; position: fixed; top: 0; left: 0;
+            background-color: var(--sidebar-bg);
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1000; white-space: nowrap; overflow: hidden;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
-        .sidebar:hover { width: 230px; }
-        
+        .sidebar:hover { width: 240px; }
+
         .sidebar-brand {
-            padding: 15px 0; color: #fff; display: flex; align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px;
+            padding: 22px 0; color: #fff; display: flex; align-items: center;
+            margin-bottom: 8px;
         }
-        .sidebar-brand i { font-size: 1.4rem; min-width: 70px; text-align: center; color: #4dabf7; }
-        .sidebar-brand span { font-weight: 600; font-size: 1.1rem; letter-spacing: 0.5px; opacity: 0; transition: 0.3s; }
+        .sidebar-brand i { font-size: 1.3rem; min-width: 72px; text-align: center; color: var(--primary); }
+        .sidebar-brand span { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.2px; opacity: 0; transition: 0.25s; }
         .sidebar:hover .sidebar-brand span { opacity: 1; }
 
         .sidebar a {
-            color: #aeb4c0; text-decoration: none; display: flex; align-items: center;
-            padding: 12px 0; font-size: 0.9rem; transition: all 0.2s ease;
-            border-left: 3px solid transparent; cursor: pointer; margin-bottom: 2px;
+            color: var(--sidebar-text); text-decoration: none; display: flex; align-items: center;
+            padding: 12px 0; font-size: 0.88rem; font-weight: 500; transition: all 0.2s ease;
+            cursor: pointer; margin: 2px 8px; border-radius: 10px; width: calc(100% - 16px);
         }
-        .sidebar a i { font-size: 1.2rem; min-width: 70px; text-align: center; }
-        .sidebar a span { opacity: 0; transition: opacity 0.3s; }
+        .sidebar a i { font-size: 1.15rem; min-width: 56px; text-align: center; }
+        .sidebar a span { opacity: 0; transition: opacity 0.25s; }
         .sidebar:hover a span { opacity: 1; }
-        
-        /* Efek Hover & Active yang lebih elegan */
-        .sidebar a:hover { color: #fff; background-color: rgba(255,255,255,0.05); }
-        .sidebar a.active {
-            color: #fff; 
-            background-color: rgba(77, 171, 247, 0.08); /* Highlight sangat transparan */
-            border-left: 3px solid #4dabf7; /* Indikator garis di kiri */
-        }
-        .sidebar a.text-danger:hover { background-color: rgba(220, 53, 69, 0.1); color: #ff6b6b !important; }
+
+        .sidebar a:hover { color: #fff; background-color: rgba(255,255,255,0.06); }
+        .sidebar a.active { color: #fff; background-color: var(--primary); }
+        .sidebar a.text-danger:hover { background-color: rgba(239, 68, 68, 0.12); color: #f87171 !important; }
 
         /* Konten Utama */
-        .main-content { margin-left: 70px; padding: 25px; transition: 0.3s; display: none; }
-        .status-badge { font-weight: 600; padding: 5px 12px; border-radius: 6px; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;}
-        .bg-wait { background-color: #f1f3f5; color: #495057; }
-        .bg-onproses { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;}
-        .bg-finish { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc;}
-        .table-hover tbody tr { cursor: pointer; transition: 0.2s; }
-        .table-hover tbody tr:hover { background-color: #f8f9fa; }
+        .main-content { margin-left: 72px; padding: 28px; transition: 0.3s; display: none; }
+        .card { border-radius: var(--radius); border: 1px solid var(--card-border); }
+        .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03) !important; }
+
+        .status-badge { font-weight: 600; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.4px;}
+        .bg-wait { background-color: #f1f2f4; color: #5b616e; }
+        .bg-onproses { background-color: #fff7e6; color: #b7791f; }
+        .bg-finish { background-color: #e6f7ee; color: #1a7f4e; }
+        .table-hover tbody tr { cursor: pointer; transition: 0.15s; }
+        .table-hover tbody tr:hover { background-color: var(--primary-light); }
+
+        .btn-primary { background-color: var(--primary); border-color: var(--primary); }
+        .btn-primary:hover { background-color: var(--primary-dark); border-color: var(--primary-dark); }
+        .text-primary { color: var(--primary) !important; }
+        .border-primary { border-color: var(--primary) !important; }
+
+        /* ===== MODE TABLET (tab lapangan: production & plan) — spacing dipadatkan agar layar maksimal ===== */
+        .main-content.tablet-mode { padding: 10px 10px 4px 10px; }
+        .tablet-mode #topHeader { padding: 8px 14px !important; margin-bottom: 10px !important; }
+        .tablet-mode .card { border-radius: 10px; }
+        .tablet-mode .card-body { padding: 10px 12px; }
+        .tablet-mode .toolbar-row { margin-bottom: 8px !important; }
+        .tablet-mode .table > :not(caption) > * > * { padding: 7px 9px; font-size: 0.85rem; }
+        .tablet-mode .status-badge { padding: 3px 9px; font-size: 0.65rem; }
+        .tablet-mode .footer-note { display: none; }
+
+        /* Toolbar tombol atas tabel */
+        .toolbar-row { gap: 8px; flex-wrap: wrap; }
+
+        /* Modal QR Scanner */
+        #qr-reader { width: 100%; max-width: 420px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
+        #qr-reader video { border-radius: 10px; }
+        .qr-raw-box { background: #111827; color: #a7f3d0; font-family: monospace; font-size: 0.78rem; padding: 10px 12px; border-radius: 8px; word-break: break-all; }
+        .qr-field-table td { padding: 4px 8px; font-size: 0.82rem; }
+
+        /* Kotak info Leader/OT, Member, & Metrik (Coil/Skid, Berat) di header bar */
+        .header-box-mini { border: 1px solid #d1d5db; border-radius: 8px; padding: 4px 12px; background: #fff; text-align: center; min-width: 66px; }
+        .header-box-mini .lbl { font-size: 0.62rem; letter-spacing: 0.4px; color: #6b7280; display: block; }
+        .header-box-mini .val { font-weight: 700; color: #1f2937; font-size: 0.85rem; }
+
+        .member-col-wrap { display: flex; gap: 6px; }
+        .member-col { display: flex; flex-direction: column; gap: 4px; }
+        .header-member-box {
+            border: 1px solid #93c5fd; border-radius: 8px; padding: 4px 10px; background: #fff;
+            font-size: 0.72rem; font-weight: 600; color: #1f2937; min-width: 96px; max-width: 130px;
+            text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .header-member-box.is-placeholder { color: #9ca3af; font-weight: 500; }
+
+        .metric-col-wrap { display: flex; flex-direction: row; gap: 6px; }
+        .header-metric-box { border-radius: 8px; padding: 4px 14px; text-align: center; min-width: 92px; }
+        .header-metric-box .lbl { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.3px; display: block; color: #1f2937; }
+        .header-metric-box .val { font-weight: 700; font-size: 0.85rem; color: #1f2937; }
+        .metric-coil { background: #c9e9d2; border: 1px solid #9ed6ac; }
+        .metric-berat { background: #fbe3a3; border: 1px solid #f3ca63; }
     </style>
 </head>
 <body>
@@ -73,13 +164,11 @@
             <form id="loginForm">
                 <div class="mb-3 text-start">
                     <label class="form-label fw-bold small text-secondary">Pilih Lokasi Kerja</label>
-                    <select class="form-select form-select-sm" id="loginLine" required>
-                        <option value="" disabled selected>-- Pilih Line --</option>
-                        <option value="SL1">Slitter 1 (SL1)</option>
-                        <option value="SL2">Slitter 2 (SL2)</option>
-                        <option value="SM1">Shear Line 1 (SM1)</option>
-                        <option value="OFFICE">Office / Admin (Non-Line)</option>
-                    </select>
+                    <div class="line-picker-field" id="lineePickerField" onclick="openLinePickerModal()">
+                        <span id="loginLineText" class="text-muted">-- Pilih Line --</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <input type="hidden" id="loginLine" required>
                 </div>
                 <div class="mb-4 text-start">
                     <label class="form-label fw-bold small text-secondary">User ID / PIN</label>
@@ -92,26 +181,90 @@
         </div>
     </div>
 
+    <!-- POPUP PILIH LINE (Card dari db_users kolom departemen) -->
+    <div class="modal fade" id="linePickerModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-bold">Pilih Lokasi Kerja</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    <div id="linePickerBody" class="line-card-grid">
+                        <div class="text-center text-muted py-4 w-100">
+                            <div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>Memuat daftar line...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <i class="bi bi-boxes"></i><span>HSSI Sys</span>
+            <i class="bi bi-boxes"></i><span>PR HSSI</span>
         </div>
-        <a id="nav-live" class="active" onclick="switchTab('live')"><i class="bi bi-display"></i><span>Live Production</span></a>
-        <a id="nav-history" onclick="switchTab('history')"><i class="bi bi-search"></i><span>History & Correction</span></a>
-        <a id="nav-dashboard" onclick="switchTab('dashboard')"><i class="bi bi-graph-up-arrow"></i><span>Summary Report</span></a>
-        <a id="nav-plan" onclick="switchTab('plan')"><i class="bi bi-calendar3"></i><span>Master Planning</span></a>
-        
-        <a class="text-danger mt-4 border-0" onclick="logout()"><i class="bi bi-power"></i><span>Keluar / Ganti Akun</span></a>
+        <a id="nav-production" class="active" onclick="switchTabById('production', this)"><i class="bi bi-clipboard-data"></i><span>Production Report</span></a>
+        <a id="nav-plan" onclick="switchTabById('plan', this)"><i class="bi bi-calendar3"></i><span>Planning Proses</span></a>
+        <a id="nav-history" onclick="switchTabById('history', this)"><i class="bi bi-search"></i><span>History & Correction</span></a>
+        <a id="nav-summary" onclick="switchTabById('summary', this)"><i class="bi bi-graph-up-arrow"></i><span>Summary Report</span></a>
+        <a id="nav-dashboard" onclick="switchTabById('dashboard', this)"><i class="bi bi-speedometer2"></i><span>Dashboard Proses</span></a>
+
+        <a class="text-danger mt-4" onclick="logout()"><i class="bi bi-power"></i><span>Keluar / Ganti Akun</span></a>
     </div>
 
     <!-- MAIN CONTENT -->
     <div class="main-content" id="mainContent">
         <!-- HEADER -->
-        <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm border-start border-primary border-4">
+        <div id="topHeader" class="d-flex justify-content-between align-items-center flex-wrap mb-4 bg-white p-3 rounded shadow-sm border-start border-primary border-4">
             <div>
-                <h5 class="mb-1 text-primary fw-bold" id="pageTitle">Live Production</h5>
+                <h5 class="mb-1 text-primary fw-bold" id="pageTitle">Production Report</h5>
                 <small class="text-muted">User: <span id="displayMember" class="fw-bold text-dark"></span> | Role: <span id="displayRole" class="badge bg-info text-dark"></span></small>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center" id="headerInfoBox">
+                <div class="member-col-wrap" id="memberBadgeWrap">
+                    <div class="member-col">
+                        <div class="header-member-box is-placeholder" data-member-idx="1">Member 1</div>
+                        <div class="header-member-box is-placeholder" data-member-idx="2">Member 2</div>
+                    </div>
+                    <div class="member-col">
+                        <div class="header-member-box is-placeholder" data-member-idx="3">Member 3</div>
+                        <div class="header-member-box is-placeholder" data-member-idx="4">Member 4</div>
+                    </div>
+                    <div class="member-col">
+                        <div class="header-member-box is-placeholder" data-member-idx="5">Member 5</div>
+                        <div class="header-member-box is-placeholder" data-member-idx="6">Member 6</div>
+                    </div>
+                    <div class="member-col">
+                        <div class="header-member-box is-placeholder" data-member-idx="7">Member 7</div>
+                        <div class="header-member-box is-placeholder" data-member-idx="8">Member 8</div>
+                    </div>
+                    <div class="member-col">
+                        <div class="header-member-box is-placeholder" data-member-idx="9">Member 9</div>
+                        <div class="header-member-box is-placeholder" data-member-idx="10">Member 10</div>
+                    </div>
+                </div>
+
+                <div class="metric-col-wrap">
+                    <div class="header-metric-box metric-coil">
+                        <span class="lbl">Coil/Skid</span>
+                        <span class="val" id="displayCoilSkid">0</span>
+                    </div>
+                    <div class="header-metric-box metric-berat">
+                        <span class="lbl">Berat</span>
+                        <span class="val" id="displayBerat">0</span>
+                    </div>
+                </div>
+
+                <div class="header-box-mini">
+                    <span class="lbl">LEADER</span>
+                    <span class="val" id="displayLeader">-</span>
+                </div>
+                <div class="header-box-mini">
+                    <span class="lbl">OT (JAM)</span>
+                    <span class="val" id="displayOT">-</span>
+                </div>
             </div>
             <div class="text-end">
                 <span class="badge bg-light text-dark border fs-6 me-2" id="shiftDisplay">Shift: -</span>
@@ -119,15 +272,23 @@
             </div>
         </div>
 
-        <!-- TAB: LIVE PRODUCTION -->
-        <div id="tab-live" class="tab-pane active">
+        <!-- TAB: PRODUCTION REPORT -->
+        <div id="tab-production" class="tab-pane active">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <button class="btn btn-primary btn-sm px-3 shadow-sm" onclick="fetchLiveData()">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
-                        </button>
-                        <div class="input-group input-group-sm w-25">
+                    <div class="d-flex justify-content-between align-items-center mb-3 toolbar-row">
+                        <div class="d-flex toolbar-row">
+                            <button class="btn btn-primary btn-sm px-3 shadow-sm" onclick="fetchLiveData()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                            <button class="btn btn-dark btn-sm px-3 shadow-sm" onclick="openHeaderModal()">
+                                <i class="bi bi-card-heading"></i> Input Header
+                            </button>
+                            <button class="btn btn-success btn-sm px-3 shadow-sm" onclick="openQrModal()">
+                                <i class="bi bi-qr-code-scan"></i> Input Data
+                            </button>
+                        </div>
+                        <div class="input-group input-group-sm" style="max-width: 220px;">
                             <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
                             <input type="text" class="form-control border-start-0 ps-0" id="searchInput" placeholder="Cari Packing No..." onkeyup="filterTable()">
                         </div>
@@ -152,10 +313,16 @@
             </div>
         </div>
         
-        <!-- PENGGANTI TAB LAINNYA -->
-        <div id="tab-history" class="tab-pane d-none"><div class="alert alert-secondary border-0"><i class="bi bi-tools"></i> Fitur Pencarian & Koreksi Data dalam pengembangan...</div></div>
-        <div id="tab-dashboard" class="tab-pane d-none"><div class="alert alert-secondary border-0"><i class="bi bi-tools"></i> Dashboard Rekapitulasi dalam pengembangan...</div></div>
-        <div id="tab-plan" class="tab-pane d-none"><div class="alert alert-secondary border-0"><i class="bi bi-tools"></i> Tabel Master Planning dalam pengembangan...</div></div>
+        <!-- TAB LAINNYA (menyusul dibangun bersama) -->
+        <div id="tab-plan" class="tab-pane d-none"><div class="alert alert-light border text-muted rounded-3"><i class="bi bi-tools"></i> Planning Proses &mdash; dalam pengembangan...</div></div>
+        <div id="tab-history" class="tab-pane d-none"><div class="alert alert-light border text-muted rounded-3"><i class="bi bi-tools"></i> History & Correction &mdash; dalam pengembangan...</div></div>
+        <div id="tab-summary" class="tab-pane d-none"><div class="alert alert-light border text-muted rounded-3"><i class="bi bi-tools"></i> Summary Report &mdash; dalam pengembangan...</div></div>
+        <div id="tab-dashboard" class="tab-pane d-none"><div class="alert alert-light border text-muted rounded-3"><i class="bi bi-tools"></i> Dashboard Proses &mdash; dalam pengembangan...</div></div>
+
+        <!-- FOOTER -->
+        <div class="text-center text-muted mt-4 footer-note" style="font-size: 0.72rem;">
+            Production Report V 1.0 &copy; Sopari 2026
+        </div>
     </div>
 
     <!-- MODAL POP-UP FORM -->
@@ -262,8 +429,119 @@
         </div>
     </div>
 
+    <!-- MODAL: INPUT HEADER -->
+    <div class="modal fade" id="headerModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white border-0">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-card-heading"></i> Input Header Produksi</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <form id="headerForm">
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Tanggal Kerja</label>
+                                <input type="date" class="form-control form-control-sm" id="h_tanggal_kerja" onchange="onHeaderKeyFieldChange()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Shift</label>
+                                <select class="form-select form-select-sm" id="h_shift" onchange="onHeaderKeyFieldChange()">
+                                    <option value="1">Shift 1 (08:00 - 20:00)</option>
+                                    <option value="2">Shift 2 (20:00 - 08:00)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Tanggal Report</label>
+                                <input type="date" class="form-control form-control-sm" id="h_tanggal_report" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Line</label>
+                                <input type="text" class="form-control form-control-sm" id="h_line" readonly>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Leader</label>
+                                <input type="text" class="form-control form-control-sm" id="h_leader" placeholder="Nama Leader">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">OT (Jam)</label>
+                                <input type="number" step="0.5" class="form-control form-control-sm" id="h_ot" placeholder="0">
+                            </div>
+                        </div>
+
+                        <label class="form-label fw-bold small mb-1">Member</label>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control form-control-sm mb-2" id="h_member_1" placeholder="Member 1">
+                                <input type="text" class="form-control form-control-sm mb-2" id="h_member_2" placeholder="Member 2">
+                                <input type="text" class="form-control form-control-sm mb-2" id="h_member_3" placeholder="Member 3">
+                                <input type="text" class="form-control form-control-sm mb-2" id="h_member_4" placeholder="Member 4">
+                                <input type="text" class="form-control form-control-sm" id="h_member_5" placeholder="Member 5">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control form-control-sm mb-2" id="h_member_6" placeholder="Member 6">
+                                <input type="text" class="form-control form-control-sm mb-2" id="h_member_7" placeholder="Member 7">
+                                <input type="text" class="form-control form-control-sm mb-2" id="h_member_8" placeholder="Member 8">
+                                <input type="text" class="form-control form-control-sm mb-2" id="h_member_9" placeholder="Member 9">
+                                <input type="text" class="form-control form-control-sm" id="h_member_10" placeholder="Member 10">
+                            </div>
+                        </div>
+
+                        <div class="bg-white border rounded p-2">
+                            <label class="text-muted" style="font-size: 0.7rem;">REPORT ID (Otomatis)</label>
+                            <div class="fw-bold text-primary" id="h_report_id_preview">-</div>
+                            <div class="text-muted mt-1 d-none" id="h_last_updated_info" style="font-size: 0.72rem;"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-white border-0 py-2">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-dark btn-sm px-4 shadow-sm" id="btnSubmitHeader" onclick="submitHeaderData()">
+                        <i class="bi bi-save"></i> Simpan Header
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: INPUT DATA (QR SCANNER) -->
+    <div class="modal fade" id="qrModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white border-0">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-qr-code-scan"></i> Scan QR Data Produksi</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div id="qr-reader"></div>
+                    <div class="text-center text-muted small mt-2" id="qrStatusText">Arahkan kamera ke kode QR...</div>
+
+                    <div id="qrResultBox" class="mt-3 d-none">
+                        <label class="text-muted fw-bold small">Hasil Scan (Raw)</label>
+                        <div class="qr-raw-box mb-2" id="qrRawText">-</div>
+                        <table class="table table-sm table-bordered qr-field-table mb-2">
+                            <tbody id="qrFieldTableBody"></tbody>
+                        </table>
+                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="restartQrScan()">
+                            <i class="bi bi-arrow-repeat"></i> Scan Ulang
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-0 py-2">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- QR Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <script>
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbyDqs9u-4rMnE8vCN-4le7naWOHXbwyCOQjcIxr4YSKMaq6Z0WhzmvefYu6Ji3mxPud/exec';
@@ -272,7 +550,62 @@
         let sessionLine = '';
         let sessionMember = '';
         let sessionRole = '';
+        let sessionDept = '';
+        let sessionProdType = null; // 'coil' | 'sheet' — ditentukan backend dari kolom "departemen" di db_users
         const modalInstance = new bootstrap.Modal(document.getElementById('productionModal'));
+        const linePickerModalInstance = new bootstrap.Modal(document.getElementById('linePickerModal'));
+        let departmentListCache = null; // cache hasil getDepartments supaya tidak fetch berulang tiap buka popup
+
+        // ================== POPUP PILIH LINE (Card dari db_users kolom departemen) ==================
+        function openLinePickerModal() {
+            linePickerModalInstance.show();
+            if (departmentListCache) {
+                renderLineCards(departmentListCache);
+                return;
+            }
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getDepartments' })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    let list = res.data || [];
+                    if (!list.includes('OFFICE')) list.push('OFFICE'); // opsi non-line selalu tersedia
+                    departmentListCache = list;
+                    renderLineCards(list);
+                } else {
+                    document.getElementById('linePickerBody').innerHTML = `<div class="text-center text-danger py-4 w-100">${res.message}</div>`;
+                }
+            })
+            .catch(() => {
+                document.getElementById('linePickerBody').innerHTML = `<div class="text-center text-danger py-4 w-100">Gagal memuat daftar line. Periksa koneksi.</div>`;
+            });
+        }
+
+        function renderLineCards(list) {
+            const body = document.getElementById('linePickerBody');
+            if (!list.length) {
+                body.innerHTML = `<div class="text-center text-muted py-4 w-100">Belum ada data departemen di db_users.</div>`;
+                return;
+            }
+            const currentVal = document.getElementById('loginLine').value;
+            body.innerHTML = list.map(dept => {
+                const isOffice = dept === 'OFFICE';
+                const icon = isOffice ? 'bi-building' : 'bi-gear-wide-connected';
+                const label = isOffice ? 'Office / Admin' : dept;
+                const active = dept === currentVal ? 'active' : '';
+                return `<div class="line-card ${active}" onclick="selectLineCard('${dept.replace(/'/g, "\\'")}')"><i class="bi ${icon}"></i>${label}</div>`;
+            }).join('');
+        }
+
+        function selectLineCard(dept) {
+            document.getElementById('loginLine').value = dept;
+            const textEl = document.getElementById('loginLineText');
+            textEl.innerText = dept === 'OFFICE' ? 'Office / Admin (Non-Line)' : dept;
+            document.getElementById('lineePickerField').classList.add('is-selected');
+            linePickerModalInstance.hide();
+        }
 
         // ================== LOGIKA LOGIN SANGAT AMAN ==================
         function handleLogin() {
@@ -300,21 +633,24 @@
                     if(res.status === 'success') {
                         sessionMember = res.user.nama_member;
                         sessionRole = res.user.role;
-                        
+                        sessionDept = res.user.departemen || '';
+                        sessionProdType = res.user.prod_type || null;
+
                         document.getElementById('loginScreen').style.display = 'none';
                         document.getElementById('mainContent').style.display = 'block';
                         
                         document.getElementById('displayMember').innerText = sessionMember;
                         document.getElementById('displayRole').innerText = sessionRole;
-                        document.getElementById('pageTitle').innerText = `Live Production (${sessionLine})`;
-                        
                         applyRoleRestrictions(sessionRole);
-                        
+
+                        if (sessionLine !== 'OFFICE' && !sessionProdType) {
+                            Swal.fire({ icon: 'warning', title: 'Departemen Belum Terdaftar', text: 'Kolom departemen user ini belum dikenali sistem, sehingga data produksi tidak bisa dibaca/disimpan. Hubungi Admin.', timer: 3500, showConfirmButton: false });
+                        }
+
                         if(sessionLine !== 'OFFICE') {
-                            switchTab('live');
-                            fetchLiveData(); 
+                            switchTabById('production', document.getElementById('nav-production'));
                         } else {
-                            switchTab('dashboard');
+                            switchTabById('dashboard', document.getElementById('nav-dashboard'));
                         }
                     } else {
                         Swal.fire('Akses Ditolak', res.message, 'error');
@@ -341,26 +677,31 @@
 
         // ================== LOGIKA HAK AKSES ==================
         function applyRoleRestrictions(role) {
-            document.getElementById('nav-live').style.display = 'none';
-            document.getElementById('nav-history').style.display = 'none';
-            document.getElementById('nav-dashboard').style.display = 'none';
-            document.getElementById('nav-plan').style.display = 'none';
+            const allNav = ['nav-production', 'nav-plan', 'nav-history', 'nav-summary', 'nav-dashboard'];
+            allNav.forEach(id => document.getElementById(id).style.display = 'none');
 
             let r = role.toUpperCase();
             if (r.includes('ADMIN') || r.includes('LEADER')) {
-                ['nav-live', 'nav-history', 'nav-dashboard', 'nav-plan'].forEach(id => document.getElementById(id).style.display = 'flex');
+                allNav.forEach(id => document.getElementById(id).style.display = 'flex');
             } else if (r.includes('PLANNING')) {
-                ['nav-dashboard', 'nav-plan'].forEach(id => document.getElementById(id).style.display = 'flex');
+                ['nav-plan', 'nav-summary', 'nav-dashboard'].forEach(id => document.getElementById(id).style.display = 'flex');
             } else {
-                ['nav-live', 'nav-history'].forEach(id => document.getElementById(id).style.display = 'flex');
+                ['nav-production', 'nav-history'].forEach(id => document.getElementById(id).style.display = 'flex');
             }
         }
 
         function logout() {
-            sessionLine = ''; sessionMember = ''; sessionRole = '';
+            sessionLine = ''; sessionMember = ''; sessionRole = ''; sessionDept = ''; sessionProdType = null;
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('mainContent').style.display = 'none';
             document.getElementById('loginUserId').value = '';
+            document.getElementById('loginLine').value = '';
+            document.getElementById('loginLineText').innerText = '-- Pilih Line --';
+            document.getElementById('lineePickerField').classList.remove('is-selected');
+            document.getElementById('displayLeader').innerText = '-';
+            document.getElementById('displayOT').innerText = '-';
+            renderMemberBoxes('');
+            resetProductionMetrics();
         }
 
         // ================== JAM & TAB ==================
@@ -368,24 +709,48 @@
         function updateClock() {
             const now = new Date();
             document.getElementById('clockDisplay').innerText = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            let shift = (now.getHours() >= 8 && now.getHours() < 20) ? 'A' : 'B';
-            document.getElementById('shiftDisplay').innerText = `Shift: ${shift}`;
+            let shift = (now.getHours() >= 8 && now.getHours() < 20) ? '1' : '2';
+            document.getElementById('shiftDisplay').innerText = `Shift ${shift}`;
         }
 
-        function switchTab(tabId) {
+        const TAB_TITLES = {
+            production: 'Production Report',
+            plan: 'Planning Proses',
+            history: 'History & Correction',
+            summary: 'Summary Report',
+            dashboard: 'Dashboard Proses'
+        };
+
+        const FIELD_TABS = ['production', 'plan']; // Diakses via tablet di lapangan -> header disembunyikan
+
+        function switchTabById(tabId, navEl) {
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('d-none'));
             document.getElementById('tab-' + tabId).classList.remove('d-none');
             document.querySelectorAll('.sidebar a').forEach(el => el.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            if (navEl) navEl.classList.add('active');
+
+            let title = TAB_TITLES[tabId] || tabId;
+            if (tabId === 'production') title += ` (${sessionLine})`;
+            document.getElementById('pageTitle').innerText = title;
+
+            document.getElementById('mainContent').classList.toggle('tablet-mode', FIELD_TABS.includes(tabId));
+
+            if (tabId === 'production') loadHeaderInfo();
+
+            if (tabId === 'production') fetchLiveData();
         }
 
         // ================== FETCH DATA ==================
         function fetchLiveData() {
+            if (!sessionProdType) {
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><i class="bi bi-exclamation-circle fs-3"></i><br>Departemen user ini belum terdaftar di sistem. Hubungi Admin.</td></tr>`;
+                return;
+            }
             document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-secondary"><div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>Menarik jadwal dari Line ${sessionLine}...</td></tr>`;
             
             fetch(GAS_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: 'getLiveProduction', line: sessionLine }) 
+                body: JSON.stringify({ action: 'getLiveProduction', line: sessionLine, prod_type: sessionProdType, report_id: buildSessionReportId() }) 
             })
             .then(res => res.text())
             .then(text => {
@@ -394,6 +759,7 @@
                     if(res.status === 'success') {
                         globalData = res.data;
                         renderTable(globalData);
+                        updateProductionMetrics(globalData);
                     } else {
                         document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><i class="bi bi-x-circle fs-3"></i><br>${res.message}</td></tr>`;
                     }
@@ -424,7 +790,7 @@
                     </tr>
                 `;
             });
-            document.getElementById('tableBody').innerHTML = tbody || '<tr><td colspan="7" class="text-center text-secondary py-4">Tidak ada antrean hari ini.</td></tr>';
+            document.getElementById('tableBody').innerHTML = tbody || '<tr><td colspan="7" class="text-center text-secondary py-4">Belum ada data yang diinput untuk shift ini.</td></tr>';
         }
 
         function formatTimeShow(isoString) {
@@ -488,7 +854,7 @@
 
             fetch(GAS_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: 'upsertData', data: payload })
+                body: JSON.stringify({ action: 'upsertData', data: payload, prod_type: sessionProdType })
             })
             .then(res => res.json())
             .then(res => {
@@ -507,7 +873,256 @@
             let rows = document.querySelectorAll('#tableBody tr');
             rows.forEach(row => { row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none'; });
         }
-        
+
+        // ================== MODAL: INPUT HEADER ==================
+        const headerModalInstance = new bootstrap.Modal(document.getElementById('headerModal'));
+
+        function openHeaderModal() {
+            const t = getTodayISO();
+            document.getElementById('h_tanggal_kerja').value = t;
+            document.getElementById('h_tanggal_report').value = t;
+            document.getElementById('h_shift').value = getCurrentShiftGuess();
+            document.getElementById('h_line').value = sessionLine;
+            clearHeaderFormFields();
+            document.getElementById('h_member_1').value = sessionMember || '';
+            updateReportIdPreview();
+            loadExistingHeaderIntoForm(); // muat data yang sudah ada (kalau ada) supaya tidak tertimpa kosong & bisa langsung direvisi
+            headerModalInstance.show();
+        }
+
+        function clearHeaderFormFields() {
+            document.getElementById('h_leader').value = '';
+            document.getElementById('h_ot').value = '';
+            for (let i = 1; i <= 10; i++) document.getElementById('h_member_' + i).value = '';
+            document.getElementById('h_last_updated_info').classList.add('d-none');
+        }
+
+        // Dipanggil saat Tanggal Kerja / Shift diganti di dalam modal:
+        // update preview Report ID, lalu cek ke server apakah header untuk tanggal/shift itu sudah pernah diisi.
+        function onHeaderKeyFieldChange() {
+            updateReportIdPreview();
+            clearHeaderFormFields();
+            loadExistingHeaderIntoForm();
+        }
+
+        // Ambil data header yang sudah tersimpan (kalau ada) untuk Report ID saat ini, lalu isi ke form.
+        // Ini mencegah data lama hilang/tertimpa kosong saat "Input Header" dibuka ulang, dan sekaligus
+        // menjadi cara member merevisi header: buka lagi, field terisi otomatis, tinggal ubah yang perlu.
+        function loadExistingHeaderIntoForm() {
+            const reportId = buildReportId();
+            if (reportId === '-') return;
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getHeader', report_id: reportId })
+            })
+            .then(res => res.json())
+            .then(res => {
+                const d = (res.status === 'success') ? res.data : null;
+                if (!d) return;
+
+                document.getElementById('h_leader').value = d.Leader || '';
+                document.getElementById('h_ot').value = (d.OT !== undefined && d.OT !== '') ? d.OT : '';
+
+                const members = String(d.Member || '').split(',');
+                for (let i = 1; i <= 10; i++) {
+                    document.getElementById('h_member_' + i).value = (members[i - 1] || '').trim();
+                }
+
+                const info = document.getElementById('h_last_updated_info');
+                if (d.Updated_By || d.Updated_At) {
+                    info.innerText = `Data sudah pernah diisi. Terakhir diperbarui oleh ${d.Updated_By || '-'} pada ${d.Updated_At || '-'}. Ubah field yang perlu direvisi lalu simpan.`;
+                    info.classList.remove('d-none');
+                } else {
+                    info.innerText = 'Data sudah pernah diisi sebelumnya. Ubah field yang perlu direvisi lalu simpan.';
+                    info.classList.remove('d-none');
+                }
+            })
+            .catch(() => {});
+        }
+
+        function getTodayISO() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        function getCurrentShiftGuess() {
+            const hour = new Date().getHours();
+            return (hour >= 8 && hour < 20) ? '1' : '2';
+        }
+
+        // Report_ID = kombinasi TanggalKerja + Shift + Line, contoh: 20260731-A-SL1
+        function buildReportId() {
+            const tgl = document.getElementById('h_tanggal_kerja').value.replaceAll('-', '');
+            const shift = document.getElementById('h_shift').value;
+            const line = document.getElementById('h_line').value;
+            if (!tgl || !shift || !line) return '-';
+            return `${tgl}-${shift}-${line}`;
+        }
+
+        function updateReportIdPreview() {
+            document.getElementById('h_report_id_preview').innerText = buildReportId();
+        }
+
+        function submitHeaderData() {
+            const reportId = buildReportId();
+            if (reportId === '-') {
+                Swal.fire('Perhatian', 'Lengkapi Tanggal Kerja, Shift, dan Line terlebih dahulu.', 'warning');
+                return;
+            }
+            const memberParts = [];
+            for (let i = 1; i <= 10; i++) memberParts.push(document.getElementById('h_member_' + i).value.trim());
+
+            const payload = {
+                report_id: reportId,
+                tanggal_kerja: document.getElementById('h_tanggal_kerja').value,
+                shift: document.getElementById('h_shift').value,
+                tanggal_report: document.getElementById('h_tanggal_report').value,
+                line: document.getElementById('h_line').value,
+                leader: document.getElementById('h_leader').value,
+                ot: document.getElementById('h_ot').value,
+                member: memberParts.join(','),
+                updated_by: sessionMember || ''
+            };
+
+            const btn = document.getElementById('btnSubmitHeader');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
+            btn.disabled = true;
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'saveHeader', data: payload })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    headerModalInstance.hide();
+                    Swal.fire({ icon: 'success', title: 'Header Tersimpan!', text: res.message, timer: 1500, showConfirmButton: false });
+                    loadHeaderInfo();
+                } else {
+                    Swal.fire('Error Backend', res.message, 'error');
+                }
+            })
+            .catch(() => { Swal.fire('Gagal Jaringan', 'Periksa koneksi internet.', 'error'); })
+            .finally(() => { btn.innerHTML = '<i class="bi bi-save"></i> Simpan Header'; btn.disabled = false; });
+        }
+
+        // ================== MODAL: INPUT DATA (QR SCANNER) ==================
+        const qrModalInstance = new bootstrap.Modal(document.getElementById('qrModal'));
+        let qrScanner = null;
+
+        function openQrModal() {
+            document.getElementById('qrResultBox').classList.add('d-none');
+            document.getElementById('qrStatusText').innerText = 'Arahkan kamera ke kode QR...';
+            document.getElementById('qrStatusText').classList.remove('d-none');
+            qrModalInstance.show();
+        }
+
+        document.getElementById('qrModal').addEventListener('shown.bs.modal', startQrScan);
+        document.getElementById('qrModal').addEventListener('hidden.bs.modal', stopQrScan);
+
+        function startQrScan() {
+            qrScanner = new Html5Qrcode('qr-reader');
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            qrScanner.start({ facingMode: 'environment' }, config, onScanSuccess)
+                .catch(err => {
+                    document.getElementById('qrStatusText').innerText = 'Gagal membuka kamera: ' + err;
+                });
+        }
+
+        function stopQrScan() {
+            if (qrScanner) {
+                qrScanner.stop().then(() => qrScanner.clear()).catch(() => {});
+                qrScanner = null;
+            }
+        }
+
+        function restartQrScan() {
+            document.getElementById('qrResultBox').classList.add('d-none');
+            document.getElementById('qrStatusText').classList.remove('d-none');
+            document.getElementById('qrStatusText').innerText = 'Arahkan kamera ke kode QR...';
+            startQrScan();
+        }
+
+        // NOTE: Mapping index QR ke nama field masih menunggu detail dari user.
+        // Sementara ini raw text dipecah per koma dan ditampilkan sebagai index[0..n].
+        function onScanSuccess(decodedText) {
+            stopQrScan();
+            document.getElementById('qrStatusText').classList.add('d-none');
+
+            const parts = decodedText.split(',');
+            document.getElementById('qrRawText').innerText = decodedText;
+
+            let rows = '';
+            parts.forEach((val, idx) => {
+                rows += `<tr><td class="text-muted" style="width:70px;">Index ${idx}</td><td class="fw-bold">${val || '(kosong)'}</td></tr>`;
+            });
+            document.getElementById('qrFieldTableBody').innerHTML = rows;
+            document.getElementById('qrResultBox').classList.remove('d-none');
+        }
+
+        // ================== HEADER PRODUKSI DI BAR ATAS ==================
+        // Report_ID sesi berjalan (bukan dari form modal) dipakai untuk menarik data Leader/OT/Member terbaru
+        function buildSessionReportId() {
+            const tgl = getTodayISO().replaceAll('-', '');
+            const shift = getCurrentShiftGuess();
+            return `${tgl}-${shift}-${sessionLine}`;
+        }
+
+        function loadHeaderInfo() {
+            if (!sessionLine || sessionLine === 'OFFICE') return;
+            const reportId = buildSessionReportId();
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getHeader', report_id: reportId })
+            })
+            .then(res => res.json())
+            .then(res => {
+                const d = (res.status === 'success') ? res.data : null;
+                document.getElementById('displayLeader').innerText = (d && d.Leader) ? d.Leader : '-';
+                document.getElementById('displayOT').innerText = (d && d.OT !== '') ? d.OT : '-';
+                renderMemberBoxes(d ? d.Member : '');
+            })
+            .catch(() => {});
+        }
+
+        function renderMemberBoxes(memberString) {
+            const names = String(memberString || '').split(',').map(s => s.trim());
+            for (let i = 1; i <= 10; i++) {
+                const box = document.querySelector(`.header-member-box[data-member-idx="${i}"]`);
+                if (!box) continue;
+                const name = names[i - 1];
+                if (name) {
+                    box.innerText = name;
+                    box.classList.remove('is-placeholder');
+                } else {
+                    box.innerText = `Member ${i}`;
+                    box.classList.add('is-placeholder');
+                }
+            }
+        }
+
+        // Menghitung ringkasan Coil/Skid (jumlah coil/skid yang sudah punya No. Coil) & total Berat
+        // dari data produksi Line yang sedang aktif (globalData hasil fetchLiveData).
+        function updateProductionMetrics(dataArray) {
+            let coilCount = 0;
+            let beratTotal = 0;
+            (dataArray || []).forEach(item => {
+                const pd = item.prod_details || {};
+                if (pd.id_coil) coilCount++;
+                const w = parseFloat(pd.weight_actual);
+                if (!isNaN(w)) beratTotal += w;
+            });
+            document.getElementById('displayCoilSkid').innerText = coilCount;
+            document.getElementById('displayBerat').innerText = beratTotal.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+        }
+
+        function resetProductionMetrics() {
+            document.getElementById('displayCoilSkid').innerText = '0';
+            document.getElementById('displayBerat').innerText = '0';
+        }
+
         updateClock();
     </script>
 </body>
