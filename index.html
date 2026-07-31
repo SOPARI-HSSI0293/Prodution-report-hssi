@@ -288,13 +288,15 @@
                         <table class="table table-bordered table-hover align-middle" id="liveTable">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="text-center">Status</th>
-                                    <th class="text-center">Seq</th>
+                                    <th class="text-center" style="width:1%;white-space:nowrap;">Status</th>
+                                    <th class="text-center" style="width:1%;white-space:nowrap;">Seq</th>
                                     <th>Packing No</th>
                                     <th>Customer</th>
                                     <th>Spec / Size</th>
+                                    <th class="text-center">Coil Set Lifter</th>
                                     <th class="text-center">Start</th>
                                     <th class="text-center">End</th>
+                                    <th class="text-center">Product Keluar</th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody"></tbody>
@@ -723,10 +725,10 @@
         // ================== FETCH DATA ==================
         function fetchLiveData() {
             if (!sessionProdType) {
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><i class="bi bi-exclamation-circle fs-3"></i><br>Departemen user ini belum terdaftar di sistem. Hubungi Admin.</td></tr>`;
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4"><i class="bi bi-exclamation-circle fs-3"></i><br>Departemen user ini belum terdaftar di sistem. Hubungi Admin.</td></tr>`;
                 return;
             }
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-secondary"><div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>Menarik jadwal dari Line ${sessionLine}...</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="9" class="text-center py-5 text-secondary"><div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>Menarik jadwal dari Line ${sessionLine}...</td></tr>`;
             
             fetch(GAS_URL, {
                 method: 'POST',
@@ -741,10 +743,10 @@
                         renderTable(globalData);
                         updateProductionMetrics(globalData);
                     } else {
-                        document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><i class="bi bi-x-circle fs-3"></i><br>${res.message}</td></tr>`;
+                        document.getElementById('tableBody').innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4"><i class="bi bi-x-circle fs-3"></i><br>${res.message}</td></tr>`;
                     }
                 } catch(e) {
-                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><b>Error Database:</b><br>Terdapat kesalahan di Google Script. Pastikan nama Sheet Plan benar.</td></tr>`;
+                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4"><b>Error Database:</b><br>Terdapat kesalahan di Google Script. Pastikan nama Sheet Plan benar.</td></tr>`;
                 }
             })
             .catch(err => console.error(err));
@@ -755,24 +757,31 @@
             let tbody = '';
             groups.forEach((g, i) => {
                 let p = g.plan_data;
+                let pd = g.items[0].prod_details;
                 let bgClass = g.status === 'Wait Proses' ? 'bg-wait' : g.status === 'On Proses' ? 'bg-onproses' : 'bg-finish';
                 let startT = g.firstStart ? formatTimeShow(g.firstStart) : '--:--';
                 let endT = g.lastEnd ? formatTimeShow(g.lastEnd) : '--:--';
+                let coilSetLifterT = pd.time_coil_set_lifter ? formatTimeShow(pd.time_coil_set_lifter) : '--:--';
+                let productKeluarT = pd.time_product_keluar ? formatTimeShow(pd.time_product_keluar) : '--:--';
                 let divideBadge = g.divideCount > 1 ? `<span class="badge bg-primary bg-opacity-75 ms-1" style="font-size:0.62rem;">${g.divideCount}x Divide</span>` : '';
+                let weightActual = pd.weight_actual ? `<br><small class="text-muted">${pd.weight_actual}</small>` : '';
+                let mcSemiSize = pd['mc/Semi_prod_size'] ? `<br><small class="text-muted">${pd['mc/Semi_prod_size']}</small>` : '';
 
                 tbody += `
                     <tr onclick="openModal('${g.packing_no}')" title="Klik baris untuk edit data">
-                        <td class="text-center"><span class="status-badge ${bgClass}">${g.status}</span></td>
-                        <td class="text-center">${i + 1}</td>
-                        <td class="fw-bold text-primary">${g.packing_no}${divideBadge}</td>
-                        <td>${p.customer}</td>
+                        <td class="text-center" style="white-space:nowrap;"><span class="status-badge ${bgClass}">${g.status}</span></td>
+                        <td class="text-center" style="white-space:nowrap;">${i + 1}</td>
+                        <td class="fw-bold text-primary">${g.packing_no}${divideBadge}${weightActual}</td>
+                        <td>${p.customer}${mcSemiSize}</td>
                         <td><small>${p.spec}<br><b>${p.size}</b></small></td>
+                        <td class="text-center">${coilSetLifterT}</td>
                         <td class="text-center">${startT}</td>
                         <td class="text-center">${endT}</td>
+                        <td class="text-center">${productKeluarT}</td>
                     </tr>
                 `;
             });
-            document.getElementById('tableBody').innerHTML = tbody || '<tr><td colspan="7" class="text-center text-secondary py-4">Belum ada data yang diinput untuk shift ini.</td></tr>';
+            document.getElementById('tableBody').innerHTML = tbody || '<tr><td colspan="9" class="text-center text-secondary py-4">Belum ada data yang diinput untuk shift ini.</td></tr>';
         }
 
         function formatTimeShow(isoString) {
