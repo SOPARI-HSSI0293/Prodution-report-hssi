@@ -58,17 +58,15 @@
             margin-bottom: 8px;
         }
         .sidebar-brand i { font-size: 1.3rem; min-width: 72px; text-align: center; color: var(--primary); }
-        .sidebar-brand span { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.2px; opacity: 0; transition: 0.25s; }
-        .sidebar:hover .sidebar-brand span { opacity: 1; }
+        .sidebar-brand span { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.2px; color: #fff; }
 
         .sidebar a {
-            color: var(--sidebar-text); text-decoration: none; display: flex; align-items: center;
+            color: #fff; text-decoration: none; display: flex; align-items: center;
             padding: 12px 0; font-size: 0.88rem; font-weight: 500; transition: all 0.2s ease;
             cursor: pointer; margin: 2px 8px; border-radius: 10px; width: calc(100% - 16px);
         }
-        .sidebar a i { font-size: 1.15rem; min-width: 56px; text-align: center; }
-        .sidebar a span { opacity: 0; transition: opacity 0.25s; }
-        .sidebar:hover a span { opacity: 1; }
+        .sidebar a i { font-size: 1.15rem; min-width: 56px; text-align: center; color: #fff; }
+        .sidebar a span { color: #fff; }
 
         .sidebar a:hover { color: #fff; background-color: rgba(255,255,255,0.06); }
         .sidebar a.active { color: #fff; background-color: var(--primary); }
@@ -135,6 +133,17 @@
         #divideTabNav .nav-link { font-size: 0.78rem; font-weight: 600; padding: 4px 14px; }
         #divideTabNav .nav-link.active { background-color: var(--primary); }
         .divide-pane { padding-top: 2px; }
+
+        /* Card pilihan Line di modal login (pengganti dropdown) */
+        .line-card {
+            border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 14px 10px; text-align: center;
+            cursor: pointer; transition: all 0.15s ease; height: 100%; background: #fff;
+        }
+        .line-card i { font-size: 1.4rem; color: var(--primary); display: block; margin-bottom: 6px; }
+        .line-card .line-card-label { font-weight: 600; font-size: 0.82rem; color: var(--text-dark); }
+        .line-card:hover { border-color: var(--primary); background-color: var(--primary-light); transform: translateY(-1px); }
+        .line-card.active { border-color: var(--primary); background-color: var(--primary); }
+        .line-card.active i, .line-card.active .line-card-label { color: #fff; }
     </style>
 </head>
 <body>
@@ -148,25 +157,10 @@
             <form id="loginForm">
                 <div class="mb-3 text-start">
                     <label class="form-label fw-bold small text-secondary">Pilih Lokasi Kerja</label>
-                    <select class="form-select" id="loginLine" required>
-                        <option value="" selected disabled>-- Pilih Line --</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Slitter 1">Slitter 1</option>
-                        <option value="Slitter 2">Slitter 2</option>
-                        <option value="Slitter 3">Slitter 3</option>
-                        <option value="Mini Slitter 1">Mini Slitter 1</option>
-                        <option value="Mini Slitter 2">Mini Slitter 2</option>
-                        <option value="Mini Slitter 3">Mini Slitter 3</option>
-                        <option value="EMBOSS">EMBOSS</option>
-                        <option value="Leveler">Leveler</option>
-                        <option value="Mini Leveler 1">Mini Leveler 1</option>
-                        <option value="Mini Leveler 2">Mini Leveler 2</option>
-                        <option value="Mini Leveler 3">Mini Leveler 3</option>
-                        <option value="Square Shear 1">Square Shear 1</option>
-                        <option value="Square Shear 2">Square Shear 2</option>
-                        <option value="Square Shear 3">Square Shear 3</option>
-                        <option value="User">User</option>
-                    </select>
+                    <button type="button" class="form-select text-start" id="loginLineDisplay" onclick="openLineModal()">
+                        <span class="text-muted">-- Pilih Line --</span>
+                    </button>
+                    <input type="hidden" id="loginLine">
                 </div>
                 <div class="mb-4 text-start">
                     <label class="form-label fw-bold small text-secondary">User ID / PIN</label>
@@ -176,6 +170,21 @@
                     Masuk <i class="bi bi-arrow-right-short fs-5 align-middle"></i>
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: PILIH LINE (POP-UP CARD) -->
+    <div class="modal fade" id="lineModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-bold">Pilih Lokasi Kerja</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2" id="lineCardGrid"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -535,6 +544,50 @@
         // Pilihan Line non-mesin (tidak masuk ke tabel produksi coil/sheet), langsung dicek dari value <select id="loginLine">
         const NON_LINE_VALUES = ['Admin', 'User'];
 
+        // ================== MODAL: PILIH LINE (POP-UP CARD, PENGGANTI DROPDOWN) ==================
+        const lineModalInstance = new bootstrap.Modal(document.getElementById('lineModal'));
+        const LINE_OPTIONS = [
+            { value: 'Admin', label: 'Admin', icon: 'bi-person-badge' },
+            { value: 'Slitter 1', label: 'Slitter 1', icon: 'bi-gear-wide-connected' },
+            { value: 'Slitter 2', label: 'Slitter 2', icon: 'bi-gear-wide-connected' },
+            { value: 'Slitter 3', label: 'Slitter 3', icon: 'bi-gear-wide-connected' },
+            { value: 'Mini Slitter 1', label: 'Mini Slitter 1', icon: 'bi-gear' },
+            { value: 'Mini Slitter 2', label: 'Mini Slitter 2', icon: 'bi-gear' },
+            { value: 'EMBOSS', label: 'EMBOSS', icon: 'bi-stamp' },
+            { value: 'Leveler', label: 'Leveler', icon: 'bi-arrows-collapse' },
+            { value: 'Mini Leveler 1', label: 'Mini Leveler 1', icon: 'bi-arrows-collapse' },
+            { value: 'Mini Leveler 2', label: 'Mini Leveler 2', icon: 'bi-arrows-collapse' },
+            { value: 'Mini Leveler 3', label: 'Mini Leveler 3', icon: 'bi-arrows-collapse' },
+            { value: 'Square Shear 1', label: 'Square Shear 1', icon: 'bi-scissors' },
+            { value: 'Square Shear 2', label: 'Square Shear 2', icon: 'bi-scissors' },
+            { value: 'Square Shear 3', label: 'Square Shear 3', icon: 'bi-scissors' },
+            { value: 'User', label: 'User', icon: 'bi-people' }
+        ];
+
+        function buildLineCards() {
+            const grid = document.getElementById('lineCardGrid');
+            const current = document.getElementById('loginLine').value;
+            grid.innerHTML = LINE_OPTIONS.map(opt => `
+                <div class="col-4 col-md-3">
+                    <div class="line-card ${opt.value === current ? 'active' : ''}" onclick="selectLine('${opt.value}')">
+                        <i class="bi ${opt.icon}"></i>
+                        <div class="line-card-label">${opt.label}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openLineModal() {
+            buildLineCards();
+            lineModalInstance.show();
+        }
+
+        function selectLine(value) {
+            document.getElementById('loginLine').value = value;
+            document.getElementById('loginLineDisplay').innerHTML = `<span class="fw-bold">${value}</span>`;
+            lineModalInstance.hide();
+        }
+
         // ================== LOGIKA LOGIN SANGAT AMAN ==================
         function handleLogin() {
             const btn = document.getElementById('btnLogin');
@@ -624,6 +677,7 @@
             document.getElementById('mainContent').style.display = 'none';
             document.getElementById('loginUserId').value = '';
             document.getElementById('loginLine').value = '';
+            document.getElementById('loginLineDisplay').innerHTML = '<span class="text-muted">-- Pilih Line --</span>';
             document.getElementById('displayLeader').innerText = '-';
             document.getElementById('displayOT').innerText = '-';
             renderMemberBoxes('');
@@ -1364,7 +1418,7 @@
             onDevideChange();
 
             setTimeNow('time_start_proses_1');
-            document.getElementById('div_coil_set_lifter_1').style.display = 'none';
+            document.getElementById('div_coil_set_lifter_1').style.display = 'block';
 
             modalInstance.show();
         }
