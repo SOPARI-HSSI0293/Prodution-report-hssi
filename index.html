@@ -290,9 +290,9 @@
                                 <tr>
                                     <th class="text-center" style="width:1%;white-space:nowrap;">Status</th>
                                     <th class="text-center" style="width:1%;white-space:nowrap;">Seq</th>
-                                    <th>Packing No</th>
-                                    <th>Customer</th>
-                                    <th>Spec / Size</th>
+                                    <th>Packing No / Berat</th>
+                                    <th>Customer/Size MC-Semi</th>
+                                    <th>Spec / Size Product</th>
                                     <th class="text-center">Coil Set Lifter</th>
                                     <th class="text-center">Start</th>
                                     <th class="text-center">End</th>
@@ -759,27 +759,45 @@
                 let p = g.plan_data;
                 let pd = g.items[0].prod_details;
                 let bgClass = g.status === 'Wait Proses' ? 'bg-wait' : g.status === 'On Proses' ? 'bg-onproses' : 'bg-finish';
-                let startT = g.firstStart ? formatTimeShow(g.firstStart) : '--:--';
-                let endT = g.lastEnd ? formatTimeShow(g.lastEnd) : '--:--';
                 let coilSetLifterT = pd.time_coil_set_lifter ? formatTimeShow(pd.time_coil_set_lifter) : '--:--';
+                let startT = pd.time_start_proses ? formatTimeShow(pd.time_start_proses) : '--:--';
+                let endT = pd.time_end_proses ? formatTimeShow(pd.time_end_proses) : '--:--';
                 let productKeluarT = pd.time_product_keluar ? formatTimeShow(pd.time_product_keluar) : '--:--';
                 let divideBadge = g.divideCount > 1 ? `<span class="badge bg-primary bg-opacity-75 ms-1" style="font-size:0.62rem;">${g.divideCount}x Divide</span>` : '';
                 let weightActual = pd.weight_actual ? `<br><small class="text-muted">${pd.weight_actual}</small>` : '';
                 let mcSemiSize = pd['mc/Semi_prod_size'] ? `<br><small class="text-muted">${pd['mc/Semi_prod_size']}</small>` : '';
+                const rowspan = g.divideCount > 1 ? g.divideCount : 1;
 
                 tbody += `
                     <tr onclick="openModal('${g.packing_no}')" title="Klik baris untuk edit data">
-                        <td class="text-center" style="white-space:nowrap;"><span class="status-badge ${bgClass}">${g.status}</span></td>
-                        <td class="text-center" style="white-space:nowrap;">${i + 1}</td>
-                        <td class="fw-bold text-primary">${g.packing_no}${divideBadge}${weightActual}</td>
-                        <td>${p.customer}${mcSemiSize}</td>
-                        <td><small>${p.spec}<br><b>${p.size}</b></small></td>
+                        <td class="text-center" style="white-space:nowrap;" rowspan="${rowspan}"><span class="status-badge ${bgClass}">${g.status}</span></td>
+                        <td class="text-center" style="white-space:nowrap;" rowspan="${rowspan}">${i + 1}</td>
+                        <td class="fw-bold text-primary" rowspan="${rowspan}">${g.packing_no}${divideBadge}${weightActual}</td>
+                        <td rowspan="${rowspan}">${p.customer}${mcSemiSize}</td>
+                        <td rowspan="${rowspan}"><small>${p.spec}<br><b>${p.size}</b></small></td>
                         <td class="text-center">${coilSetLifterT}</td>
                         <td class="text-center">${startT}</td>
                         <td class="text-center">${endT}</td>
                         <td class="text-center">${productKeluarT}</td>
                     </tr>
                 `;
+
+                // Baris tambahan untuk Divide 2 dst -- hanya tampilkan 4 kolom waktu (Coil Set Lifter, Start, End, Product Keluar)
+                for (let d = 1; d < g.divideCount; d++) {
+                    const dpd = g.items[d].prod_details;
+                    const dCoilSetLifter = dpd.time_coil_set_lifter ? formatTimeShow(dpd.time_coil_set_lifter) : '--:--';
+                    const dStart = dpd.time_start_proses ? formatTimeShow(dpd.time_start_proses) : '--:--';
+                    const dEnd = dpd.time_end_proses ? formatTimeShow(dpd.time_end_proses) : '--:--';
+                    const dProductKeluar = dpd.time_product_keluar ? formatTimeShow(dpd.time_product_keluar) : '--:--';
+                    tbody += `
+                        <tr onclick="openModal('${g.packing_no}')" title="Klik baris untuk edit data">
+                            <td class="text-center">${dCoilSetLifter}</td>
+                            <td class="text-center">${dStart}</td>
+                            <td class="text-center">${dEnd}</td>
+                            <td class="text-center">${dProductKeluar}</td>
+                        </tr>
+                    `;
+                }
             });
             document.getElementById('tableBody').innerHTML = tbody || '<tr><td colspan="9" class="text-center text-secondary py-4">Belum ada data yang diinput untuk shift ini.</td></tr>';
         }
