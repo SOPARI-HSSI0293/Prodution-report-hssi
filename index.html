@@ -43,27 +43,6 @@
         .modal-backdrop { z-index: 10040; }
         .modal { z-index: 10050; }
 
-        /* Field pemicu popup pilih Line (menggantikan <select> statis) */
-        .line-picker-field {
-            display: flex; align-items: center; justify-content: space-between;
-            border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px;
-            font-size: 0.875rem; cursor: pointer; background: #fff; color: var(--text-dark);
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .line-picker-field:hover { border-color: var(--primary); }
-        .line-picker-field.is-selected span { color: var(--text-dark); font-weight: 600; }
-
-        /* Grid kartu Line/Departemen di dalam popup */
-        .line-card-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        .line-card {
-            flex: 1 1 calc(50% - 10px); min-width: 130px; border: 1.5px solid #e5e7eb; border-radius: 12px;
-            padding: 14px 10px; text-align: center; cursor: pointer; background: #fff;
-            font-weight: 700; font-size: 0.85rem; color: var(--text-dark);
-            transition: all 0.15s;
-        }
-        .line-card i { display: block; font-size: 1.3rem; margin-bottom: 6px; color: var(--primary); }
-        .line-card:hover { border-color: var(--primary); background: var(--primary-light); transform: translateY(-2px); }
-        .line-card.active { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-light); }
 
         /* Sidebar Modern & Simple */
         .sidebar {
@@ -151,6 +130,11 @@
         .header-metric-box .val { font-weight: 700; font-size: 0.85rem; color: #1f2937; }
         .metric-coil { background: #c9e9d2; border: 1px solid #9ed6ac; }
         .metric-berat { background: #fbe3a3; border: 1px solid #f3ca63; }
+
+        /* Tab per-Divide di modal Input Production Report */
+        #divideTabNav .nav-link { font-size: 0.78rem; font-weight: 600; padding: 4px 14px; }
+        #divideTabNav .nav-link.active { background-color: var(--primary); }
+        .divide-pane { padding-top: 2px; }
     </style>
 </head>
 <body>
@@ -164,11 +148,25 @@
             <form id="loginForm">
                 <div class="mb-3 text-start">
                     <label class="form-label fw-bold small text-secondary">Pilih Lokasi Kerja</label>
-                    <div class="line-picker-field" id="lineePickerField" onclick="openLinePickerModal()">
-                        <span id="loginLineText" class="text-muted">-- Pilih Line --</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-                    <input type="hidden" id="loginLine" required>
+                    <select class="form-select" id="loginLine" required>
+                        <option value="" selected disabled>-- Pilih Line --</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Slitter 1">Slitter 1</option>
+                        <option value="Slitter 2">Slitter 2</option>
+                        <option value="Slitter 3">Slitter 3</option>
+                        <option value="Mini Slitter 1">Mini Slitter 1</option>
+                        <option value="Mini Slitter 2">Mini Slitter 2</option>
+                        <option value="Mini Slitter 3">Mini Slitter 3</option>
+                        <option value="EMBOSS">EMBOSS</option>
+                        <option value="Leveler">Leveler</option>
+                        <option value="Mini Leveler 1">Mini Leveler 1</option>
+                        <option value="Mini Leveler 2">Mini Leveler 2</option>
+                        <option value="Mini Leveler 3">Mini Leveler 3</option>
+                        <option value="Square Shear 1">Square Shear 1</option>
+                        <option value="Square Shear 2">Square Shear 2</option>
+                        <option value="Square Shear 3">Square Shear 3</option>
+                        <option value="User">User</option>
+                    </select>
                 </div>
                 <div class="mb-4 text-start">
                     <label class="form-label fw-bold small text-secondary">User ID / PIN</label>
@@ -178,25 +176,6 @@
                     Masuk <i class="bi bi-arrow-right-short fs-5 align-middle"></i>
                 </button>
             </form>
-        </div>
-    </div>
-
-    <!-- POPUP PILIH LINE (Card dari db_users kolom departemen) -->
-    <div class="modal fade" id="linePickerModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
-                <div class="modal-header border-0 pb-0">
-                    <h6 class="modal-title fw-bold">Pilih Lokasi Kerja</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body pt-2">
-                    <div id="linePickerBody" class="line-card-grid">
-                        <div class="text-center text-muted py-4 w-100">
-                            <div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>Memuat daftar line...
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -287,6 +266,9 @@
                             <button class="btn btn-success btn-sm px-3 shadow-sm" onclick="openQrModal()">
                                 <i class="bi bi-qr-code-scan"></i> Input Data
                             </button>
+                            <button class="btn btn-outline-success btn-sm px-3 shadow-sm" onclick="openManualModal()">
+                                <i class="bi bi-pencil-square"></i> Input Manual
+                            </button>
                         </div>
                         <div class="input-group input-group-sm" style="max-width: 220px;">
                             <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
@@ -327,7 +309,7 @@
 
     <!-- MODAL POP-UP FORM -->
     <div class="modal fade" id="productionModal" data-bs-backdrop="static" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-primary text-white border-0">
                     <h6 class="modal-title fw-bold">Input Production Report</h6>
@@ -348,79 +330,76 @@
                     
                     <form id="prodForm">
                         <input type="hidden" id="input_packing_no">
-                        
+
+                        <!-- Info Produk (kolom: customer, spec, mc/Semi_prod_size, product_size, Cut, devide) — SAMA untuk semua Divide -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
+                                <label class="form-label fw-bold small">Customer</label>
+                                <input type="text" class="form-control form-control-sm" data-col="customer">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Spec</label>
+                                <input type="text" class="form-control form-control-sm" data-col="spec">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">MC / Semi Prod Size</label>
+                                <input type="text" class="form-control form-control-sm" data-col="mc/Semi_prod_size">
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Product Size</label>
+                                <input type="text" class="form-control form-control-sm" data-col="product_size">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Cut</label>
+                                <input type="text" class="form-control form-control-sm" data-col="Cut">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Devide</label>
+                                <select class="form-select form-select-sm" data-col="devide" id="input_devide" onchange="onDevideChange()">
+                                    <option value="No Divide">No Divide</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Hasil Aktual Produksi (kolom: actual_width_mc, weight_actual, id_coil, total_length) — SAMA untuk semua Divide -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
                                 <label class="form-label fw-bold small">Actual Width MC</label>
-                                <input type="number" step="0.01" class="form-control form-control-sm" id="actual_width_mc">
+                                <input type="number" step="0.01" class="form-control form-control-sm" data-col="actual_width_mc">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label fw-bold small">Weight Aktual</label>
-                                <input type="number" class="form-control form-control-sm" id="weight_actual">
+                                <input type="number" class="form-control form-control-sm" data-col="weight_actual">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label fw-bold small">ID Coil</label>
-                                <input type="text" class="form-control form-control-sm" id="id_coil">
+                                <input type="text" class="form-control form-control-sm" data-col="id_coil">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small">Total Length</label>
+                                <input type="number" class="form-control form-control-sm" data-col="total_length">
                             </div>
                         </div>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-4" id="div_coil_set_lifter">
-                                <label class="form-label fw-bold small">Coil Set Lifter</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="time" class="form-control" id="time_coil_set_lifter">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="setTimeNow('time_coil_set_lifter')"><i class="bi bi-clock"></i></button>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small">Start Proses</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="time" class="form-control" id="time_start_proses">
-                                    <button class="btn btn-outline-primary" type="button" onclick="setTimeNow('time_start_proses')"><i class="bi bi-clock"></i></button>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small">End Proses (Finish)</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="time" class="form-control" id="time_end_proses">
-                                    <button class="btn btn-outline-success" type="button" onclick="setTimeNow('time_end_proses')"><i class="bi bi-clock"></i></button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Downtime -->
-                        <div class="card border-warning mb-3 shadow-sm">
-                            <div class="card-header bg-warning bg-opacity-25 text-dark fw-bold py-2" style="font-size: 0.85rem;">
-                                <i class="bi bi-exclamation-triangle"></i> Downtime (Menit)
-                            </div>
-                            <div class="card-body row g-2 py-2">
-                                <div class="col-md-3">
-                                    <label class="small text-secondary">Machine Problem</label>
-                                    <input type="number" class="form-control form-control-sm" id="dt_machine_problem">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="small text-secondary">Waiting Crane</label>
-                                    <input type="number" class="form-control form-control-sm" id="dt_waiting_crane">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="small text-secondary">Waiting Hagumi</label>
-                                    <input type="number" class="form-control form-control-sm" id="dt_waiting_hagumi">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="small text-secondary">Cleaning Mesin</label>
-                                    <input type="number" class="form-control form-control-sm" id="dt_cleaning_mesin">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="form-label fw-bold small">Remark / Catatan Tambahan</label>
-                            <textarea class="form-control form-control-sm" id="remark" rows="2"></textarea>
-                        </div>
+                        <!-- Data per-Divide: kalau Devide = "No Divide" hanya 1 pane tampil (tanpa tab).
+                             Kalau Devide >= 2, muncul tab nav dan member mengisi data berbeda per Divide. -->
+                        <ul class="nav nav-pills mb-2 d-none" id="divideTabNav"></ul>
+                        <div id="divideTabContent"></div>
                     </form>
                 </div>
                 <div class="modal-footer bg-light border-0 justify-content-between">
-                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+                    <div>
+                        <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+                        <button type="button" class="btn btn-outline-danger btn-sm px-3" id="btnDeleteForm" onclick="deleteData()">
+                            <i class="bi bi-trash"></i> Hapus Data
+                        </button>
+                    </div>
                     <button type="button" class="btn btn-primary btn-sm px-4 shadow-sm" id="btnSubmitForm" onclick="submitData()">
                         <i class="bi bi-save"></i> Simpan Data
                     </button>
@@ -553,59 +532,8 @@
         let sessionDept = '';
         let sessionProdType = null; // 'coil' | 'sheet' — ditentukan backend dari kolom "departemen" di db_users
         const modalInstance = new bootstrap.Modal(document.getElementById('productionModal'));
-        const linePickerModalInstance = new bootstrap.Modal(document.getElementById('linePickerModal'));
-        let departmentListCache = null; // cache hasil getDepartments supaya tidak fetch berulang tiap buka popup
-
-        // ================== POPUP PILIH LINE (Card dari db_users kolom departemen) ==================
-        function openLinePickerModal() {
-            linePickerModalInstance.show();
-            if (departmentListCache) {
-                renderLineCards(departmentListCache);
-                return;
-            }
-            fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'getDepartments' })
-            })
-            .then(res => res.json())
-            .then(res => {
-                if (res.status === 'success') {
-                    let list = res.data || [];
-                    if (!list.includes('OFFICE')) list.push('OFFICE'); // opsi non-line selalu tersedia
-                    departmentListCache = list;
-                    renderLineCards(list);
-                } else {
-                    document.getElementById('linePickerBody').innerHTML = `<div class="text-center text-danger py-4 w-100">${res.message}</div>`;
-                }
-            })
-            .catch(() => {
-                document.getElementById('linePickerBody').innerHTML = `<div class="text-center text-danger py-4 w-100">Gagal memuat daftar line. Periksa koneksi.</div>`;
-            });
-        }
-
-        function renderLineCards(list) {
-            const body = document.getElementById('linePickerBody');
-            if (!list.length) {
-                body.innerHTML = `<div class="text-center text-muted py-4 w-100">Belum ada data departemen di db_users.</div>`;
-                return;
-            }
-            const currentVal = document.getElementById('loginLine').value;
-            body.innerHTML = list.map(dept => {
-                const isOffice = dept === 'OFFICE';
-                const icon = isOffice ? 'bi-building' : 'bi-gear-wide-connected';
-                const label = isOffice ? 'Office / Admin' : dept;
-                const active = dept === currentVal ? 'active' : '';
-                return `<div class="line-card ${active}" onclick="selectLineCard('${dept.replace(/'/g, "\\'")}')"><i class="bi ${icon}"></i>${label}</div>`;
-            }).join('');
-        }
-
-        function selectLineCard(dept) {
-            document.getElementById('loginLine').value = dept;
-            const textEl = document.getElementById('loginLineText');
-            textEl.innerText = dept === 'OFFICE' ? 'Office / Admin (Non-Line)' : dept;
-            document.getElementById('lineePickerField').classList.add('is-selected');
-            linePickerModalInstance.hide();
-        }
+        // Pilihan Line non-mesin (tidak masuk ke tabel produksi coil/sheet), langsung dicek dari value <select id="loginLine">
+        const NON_LINE_VALUES = ['Admin', 'User'];
 
         // ================== LOGIKA LOGIN SANGAT AMAN ==================
         function handleLogin() {
@@ -643,11 +571,11 @@
                         document.getElementById('displayRole').innerText = sessionRole;
                         applyRoleRestrictions(sessionRole);
 
-                        if (sessionLine !== 'OFFICE' && !sessionProdType) {
+                        if (!NON_LINE_VALUES.includes(sessionLine) && !sessionProdType) {
                             Swal.fire({ icon: 'warning', title: 'Departemen Belum Terdaftar', text: 'Kolom departemen user ini belum dikenali sistem, sehingga data produksi tidak bisa dibaca/disimpan. Hubungi Admin.', timer: 3500, showConfirmButton: false });
                         }
 
-                        if(sessionLine !== 'OFFICE') {
+                        if(!NON_LINE_VALUES.includes(sessionLine)) {
                             switchTabById('production', document.getElementById('nav-production'));
                         } else {
                             switchTabById('dashboard', document.getElementById('nav-dashboard'));
@@ -696,8 +624,6 @@
             document.getElementById('mainContent').style.display = 'none';
             document.getElementById('loginUserId').value = '';
             document.getElementById('loginLine').value = '';
-            document.getElementById('loginLineText').innerText = '-- Pilih Line --';
-            document.getElementById('lineePickerField').classList.remove('is-selected');
             document.getElementById('displayLeader').innerText = '-';
             document.getElementById('displayOT').innerText = '-';
             renderMemberBoxes('');
@@ -771,18 +697,20 @@
         }
 
         function renderTable(dataArray) {
+            const groups = groupByPackingNo(dataArray);
             let tbody = '';
-            dataArray.forEach(item => {
-                let p = item.plan_data;
-                let bgClass = item.status === 'Wait Proses' ? 'bg-wait' : item.status === 'On Proses' ? 'bg-onproses' : 'bg-finish';
-                let startT = item.prod_details.time_start_proses ? formatTimeShow(item.prod_details.time_start_proses) : '--:--';
-                let endT = item.prod_details.time_end_proses ? formatTimeShow(item.prod_details.time_end_proses) : '--:--';
+            groups.forEach((g, i) => {
+                let p = g.plan_data;
+                let bgClass = g.status === 'Wait Proses' ? 'bg-wait' : g.status === 'On Proses' ? 'bg-onproses' : 'bg-finish';
+                let startT = g.firstStart ? formatTimeShow(g.firstStart) : '--:--';
+                let endT = g.lastEnd ? formatTimeShow(g.lastEnd) : '--:--';
+                let divideBadge = g.divideCount > 1 ? `<span class="badge bg-primary bg-opacity-75 ms-1" style="font-size:0.62rem;">${g.divideCount}x Divide</span>` : '';
 
                 tbody += `
-                    <tr onclick="openModal('${p.packing_no}')" title="Klik baris untuk edit data">
-                        <td class="text-center"><span class="status-badge ${bgClass}">${item.status}</span></td>
-                        <td class="text-center">${p.seq}</td>
-                        <td class="fw-bold text-primary">${p.packing_no}</td>
+                    <tr onclick="openModal('${g.packing_no}')" title="Klik baris untuk edit data">
+                        <td class="text-center"><span class="status-badge ${bgClass}">${g.status}</span></td>
+                        <td class="text-center">${i + 1}</td>
+                        <td class="fw-bold text-primary">${g.packing_no}${divideBadge}</td>
                         <td>${p.customer}</td>
                         <td><small>${p.spec}<br><b>${p.size}</b></small></td>
                         <td class="text-center">${startT}</td>
@@ -798,31 +726,254 @@
             catch(e) { return isoString; }
         }
 
+        // Kalau Devide >= 2, backend menyimpan beberapa baris dengan packing_no yang SAMA (dibedakan lewat divide_no).
+        // Kelompokkan di sini supaya tabel & modal tetap memperlakukan 1 packing_no sebagai 1 entri (dengan N sub-data Divide).
+        function groupByPackingNo(dataArray) {
+            const map = {};
+            const order = [];
+            (dataArray || []).forEach(item => {
+                const pn = item.plan_data.packing_no;
+                if (!map[pn]) { map[pn] = []; order.push(pn); }
+                map[pn].push(item);
+            });
+            return order.map(pn => {
+                const items = map[pn].slice().sort((a, b) => {
+                    const da = parseInt(a.prod_details.divide_no) || 1;
+                    const db = parseInt(b.prod_details.divide_no) || 1;
+                    return da - db;
+                });
+                const allFinished = items.every(x => x.status === 'Finish');
+                const anyStarted = items.some(x => x.status === 'Finish' || x.status === 'On Proses');
+                const groupStatus = allFinished ? 'Finish' : (anyStarted ? 'On Proses' : 'Wait Proses');
+                const starts = items.map(x => x.prod_details.time_start_proses).filter(Boolean).sort();
+                const endsAll = items.map(x => x.prod_details.time_end_proses).filter(Boolean);
+                return {
+                    packing_no: pn,
+                    plan_data: items[0].plan_data,
+                    items: items,
+                    divideCount: items.length,
+                    status: groupStatus,
+                    firstStart: starts.length ? starts[0] : null,
+                    lastEnd: (endsAll.length === items.length) ? endsAll.sort().slice(-1)[0] : null
+                };
+            });
+        }
+
         // ================== LOGIKA MODAL FORM ==================
+        // Kolom yang SAMA untuk semua Divide (diisi sekali per packing_no)
+        const SHARED_DB_FIELDS = [
+            'customer', 'spec', 'mc/Semi_prod_size', 'product_size', 'Cut', 'devide',
+            'actual_width_mc', 'weight_actual', 'id_coil', 'total_length'
+        ];
+
+        // Kolom yang BISA BEDA nilainya di tiap Divide -> field-nya digandakan per index (_1, _2, ...)
+        const PER_DIVIDE_FIELDS = [
+            'time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar',
+            'dt_tbm', 'dt_packing_coil_back', 'dt_waiting_mc', 'dt_waiting_hagumi', 'dt_waiting_crane',
+            'dt_hagumi_separator', 'dt_winder_top_end', 'dt_cleaning_mesin', 'dt_machine_problem', 'dt_other',
+            'line_speed', 'remark'
+        ];
+
+        const DOWNTIME_COLS = [
+            { col: 'dt_tbm', label: 'TBM' },
+            { col: 'dt_packing_coil_back', label: 'Packing Coil Back' },
+            { col: 'dt_waiting_mc', label: 'Waiting MC' },
+            { col: 'dt_waiting_hagumi', label: 'Waiting Hagumi' },
+            { col: 'dt_waiting_crane', label: 'Waiting Crane' },
+            { col: 'dt_hagumi_separator', label: 'Hagumi Separator' },
+            { col: 'dt_winder_top_end', label: 'Winder Top End' },
+            { col: 'dt_cleaning_mesin', label: 'Cleaning Mesin' },
+            { col: 'dt_machine_problem', label: 'Machine Problem' },
+            { col: 'dt_other', label: 'Other' }
+        ];
+
+        const MAX_DIVIDE = 5;
+
+        function getFieldEl(col) {
+            return col.startsWith('time_') ? document.getElementById(col) : document.querySelector(`#prodForm [data-col="${col}"]`);
+        }
+
+        // Cocokkan nama kolom hasil dari sheet (prod_details) ke nama field yang dipakai kode ini
+        // tanpa peduli besar/kecil huruf atau spasi -- jaga-jaga kalau nama kolom di Google Sheet
+        // ditulis sedikit beda (mis. "Devide" vs kode yang pakai "devide").
+        function getPdValueCI(pd, col) {
+            if (pd.hasOwnProperty(col)) return pd[col];
+            const target = col.trim().toLowerCase();
+            for (const k in pd) {
+                if (k.trim().toLowerCase() === target) return pd[k];
+            }
+            return undefined;
+        }
+
+        // Bangun HTML 1 pane Divide (dipakai untuk semua index 1..MAX_DIVIDE, termasuk kasus "No Divide" = pane 1 saja)
+        function buildDividePaneHTML(idx) {
+            const downtimeInputs = DOWNTIME_COLS.map(dc => `
+                <div class="col-6 col-md-3">
+                    <label class="small text-secondary">${dc.label}</label>
+                    <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}">
+                </div>`).join('');
+
+            return `
+            <div class="divide-pane d-none" data-divide-idx="${idx}">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4" id="div_coil_set_lifter_${idx}">
+                        <label class="form-label fw-bold small">Coil Set Lifter</label>
+                        <div class="input-group input-group-sm">
+                            <input type="time" class="form-control" id="time_coil_set_lifter_${idx}">
+                            <button class="btn btn-outline-secondary" type="button" onclick="setTimeNow('time_coil_set_lifter_${idx}')"><i class="bi bi-clock"></i></button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small">Start Proses</label>
+                        <div class="input-group input-group-sm">
+                            <input type="time" class="form-control" id="time_start_proses_${idx}">
+                            <button class="btn btn-outline-primary" type="button" onclick="setTimeNow('time_start_proses_${idx}')"><i class="bi bi-clock"></i></button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small">End Proses (Finish)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="time" class="form-control" id="time_end_proses_${idx}">
+                            <button class="btn btn-outline-success" type="button" onclick="setTimeNow('time_end_proses_${idx}')"><i class="bi bi-clock"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small">Product Keluar</label>
+                        <div class="input-group input-group-sm">
+                            <input type="time" class="form-control" id="time_product_keluar_${idx}">
+                            <button class="btn btn-outline-secondary" type="button" onclick="setTimeNow('time_product_keluar_${idx}')"><i class="bi bi-clock"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-warning mb-3 shadow-sm">
+                    <div class="card-header bg-warning bg-opacity-25 text-dark fw-bold py-2 d-flex justify-content-between align-items-center" style="font-size: 0.85rem; cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseDowntime_${idx}" role="button" aria-expanded="false">
+                        <span><i class="bi bi-exclamation-triangle"></i> Downtime (Menit)</span>
+                        <i class="bi bi-chevron-down small"></i>
+                    </div>
+                    <div class="collapse" id="collapseDowntime_${idx}">
+                        <div class="card-body row g-2 py-2">
+                            ${downtimeInputs}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-1">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Line Speed</label>
+                        <input type="number" class="form-control form-control-sm" id="line_speed_${idx}">
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label fw-bold small">Remark / Catatan Tambahan</label>
+                        <textarea class="form-control form-control-sm" id="remark_${idx}" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // Panggil sekali saat halaman load: siapkan MAX_DIVIDE pane (tersembunyi) + tab nav pill-nya
+        function initDivideTabs() {
+            let panesHTML = '';
+            let navHTML = '';
+            for (let i = 1; i <= MAX_DIVIDE; i++) {
+                panesHTML += buildDividePaneHTML(i);
+                navHTML += `<li class="nav-item"><a class="nav-link ${i === 1 ? 'active' : ''}" href="#" data-divide-idx="${i}" onclick="showDividePane(${i}); return false;">Divide ${i}</a></li>`;
+            }
+            document.getElementById('divideTabContent').innerHTML = panesHTML;
+            document.getElementById('divideTabNav').innerHTML = navHTML;
+            showDividePane(1);
+        }
+
+        function getDivideCount() {
+            const v = document.getElementById('input_devide').value;
+            if (!v || v === 'No Divide') return 1;
+            const n = parseInt(v);
+            return (n >= 2 && n <= MAX_DIVIDE) ? n : 1;
+        }
+
+        function showDividePane(idx) {
+            document.querySelectorAll('.divide-pane').forEach(p => p.classList.toggle('d-none', parseInt(p.dataset.divideIdx) !== idx));
+            document.querySelectorAll('#divideTabNav .nav-link').forEach(a => a.classList.toggle('active', parseInt(a.dataset.divideIdx) === idx));
+        }
+
+        // Dipanggil saat dropdown Devide diganti user: No Divide -> tab disembunyikan, hanya pane 1 yang tampil.
+        // Devide >= 2 -> tab nav muncul sejumlah Devide, pane lain di luar hitungan ikut disembunyikan.
+        function clearDividePaneFields(idx) {
+            PER_DIVIDE_FIELDS.forEach(col => {
+                const el = document.getElementById(`${col}_${idx}`);
+                if (el) el.value = '';
+            });
+        }
+
+        // Setiap dropdown Devide berubah, pane 2 dst selalu dikosongkan dulu (default blank) --
+        // openModal akan mengisi ulang dari data tersimpan (kalau ada) tepat setelah ini dipanggil.
+        // Pane 1 tidak ikut dikosongkan karena itu tempat data "utama" yang sudah/lagi diisi.
+        function onDevideChange() {
+            const count = getDivideCount();
+            document.getElementById('divideTabNav').classList.toggle('d-none', count <= 1);
+            document.querySelectorAll('#divideTabNav .nav-link').forEach(a => {
+                const idx = parseInt(a.dataset.divideIdx);
+                a.closest('.nav-item').classList.toggle('d-none', idx > count);
+            });
+            for (let i = 2; i <= MAX_DIVIDE; i++) clearDividePaneFields(i);
+            showDividePane(1);
+        }
+
         function openModal(packingNo) {
-            const item = globalData.find(x => x.plan_data.packing_no === packingNo);
-            if(!item) return;
+            const groups = groupByPackingNo(globalData);
+            const group = groups.find(g => g.packing_no === packingNo);
+            if (!group) return;
 
             document.getElementById('prodForm').reset();
-            document.getElementById('m_packing_no').innerText = item.plan_data.packing_no;
-            document.getElementById('m_customer_size').innerText = `${item.plan_data.customer} | ${item.plan_data.size}`;
-            document.getElementById('input_packing_no').value = item.plan_data.packing_no;
+            initDivideTabs(); // reset semua pane (termasuk collapse Downtime) ke kondisi awal setiap modal dibuka
 
-            if(item.status === 'Wait Proses') {
-                setTimeNow('time_start_proses');
-                document.getElementById('div_coil_set_lifter').style.display = 'none'; 
-            } else {
-                document.getElementById('div_coil_set_lifter').style.display = 'block'; 
-                let pd = item.prod_details;
-                const fields = ['actual_width_mc', 'weight_actual', 'id_coil', 'remark', 'dt_machine_problem', 'dt_waiting_crane', 'dt_waiting_hagumi', 'dt_cleaning_mesin'];
-                fields.forEach(f => { if(pd[f]) document.getElementById(f).value = pd[f]; });
+            document.getElementById('m_packing_no').innerText = group.packing_no;
+            document.getElementById('m_customer_size').innerText = `${group.plan_data.customer} | ${group.plan_data.size}`;
+            document.getElementById('input_packing_no').value = group.packing_no;
 
-                if(pd.time_coil_set_lifter) document.getElementById('time_coil_set_lifter').value = formatTimeShow(pd.time_coil_set_lifter);
-                if(pd.time_start_proses) document.getElementById('time_start_proses').value = formatTimeShow(pd.time_start_proses);
-                if(pd.time_end_proses) document.getElementById('time_end_proses').value = formatTimeShow(pd.time_end_proses);
+            if (group.status === 'Wait Proses') {
+                document.getElementById('input_devide').value = 'No Divide';
+                onDevideChange();
+                setTimeNow('time_start_proses_1');
+                document.getElementById('div_coil_set_lifter_1').style.display = 'none';
+                return modalInstance.show();
             }
+
+            document.getElementById('div_coil_set_lifter_1').style.display = 'block';
+
+            // Isi kolom SHARED sekali saja, dari baris Divide pertama
+            const basePd = group.items[0].prod_details;
+            SHARED_DB_FIELDS.forEach(col => {
+                const el = document.querySelector(`#prodForm [data-col="${col}"]`);
+                const v = getPdValueCI(basePd, col);
+                if (!el || v === undefined || v === null || v === '') return;
+                el.value = v;
+            });
+            // PENTING: kolom "devide" TIDAK disimpan di database (hanya dipakai sebagai kontrol tampilan tab di frontend).
+            // Yang disimpan di database adalah "divide_no" per baris. Jadi jumlah Divide yang sebenarnya harus dihitung dari
+            // group.divideCount (jumlah baris/items untuk packing_no ini), BUKAN dibaca ulang dari basePd['devide'] (yang akan
+            // selalu undefined dan membuat dropdown selalu balik ke "No Divide" walau datanya sebenarnya punya 2+ Divide).
+            document.getElementById('input_devide').value = (group.divideCount >= 2) ? String(group.divideCount) : 'No Divide';
+
+            onDevideChange(); // render jumlah tab sesuai Devide yang baru saja di-set
+
+            // Isi tiap pane Divide dari baris masing-masing (diurutkan berdasarkan divide_no)
+            group.items.forEach((it, i) => {
+                const idx = i + 1;
+                const pd = it.prod_details;
+                PER_DIVIDE_FIELDS.forEach(col => {
+                    const el = document.getElementById(`${col}_${idx}`);
+                    const v = getPdValueCI(pd, col);
+                    if (!el || v === undefined || v === null || v === '') return;
+                    el.value = col.startsWith('time_') ? formatTimeShow(v) : v;
+                });
+            });
+
             modalInstance.show();
         }
+
 
         function setTimeNow(inputId) {
             const now = new Date();
@@ -831,22 +982,24 @@
 
         // ================== SUBMIT KE GAS ==================
         function submitData() {
-            const payload = {
-                line_produksi: sessionLine,
-                line_member: sessionMember,
-                packing_no: document.getElementById('input_packing_no').value,
-                actual_width_mc: document.getElementById('actual_width_mc').value,
-                weight_actual: document.getElementById('weight_actual').value,
-                id_coil: document.getElementById('id_coil').value,
-                time_coil_set_lifter: document.getElementById('time_coil_set_lifter').value,
-                time_start_proses: document.getElementById('time_start_proses').value,
-                time_end_proses: document.getElementById('time_end_proses').value,
-                dt_machine_problem: document.getElementById('dt_machine_problem').value,
-                dt_waiting_crane: document.getElementById('dt_waiting_crane').value,
-                dt_waiting_hagumi: document.getElementById('dt_waiting_hagumi').value,
-                dt_cleaning_mesin: document.getElementById('dt_cleaning_mesin').value,
-                remark: document.getElementById('remark').value
-            };
+            const divideCount = getDivideCount();
+            const packingNo = document.getElementById('input_packing_no').value;
+
+            const sharedPayload = { line_produksi: sessionLine, line_member: sessionMember, packing_no: packingNo };
+            SHARED_DB_FIELDS.forEach(col => {
+                const el = document.querySelector(`#prodForm [data-col="${col}"]`);
+                sharedPayload[col] = el ? el.value : '';
+            });
+
+            const rows = [];
+            for (let i = 1; i <= divideCount; i++) {
+                const row = Object.assign({}, sharedPayload, { divide_no: divideCount > 1 ? String(i) : '' });
+                PER_DIVIDE_FIELDS.forEach(col => {
+                    const el = document.getElementById(`${col}_${i}`);
+                    row[col] = el ? el.value : '';
+                });
+                rows.push(row);
+            }
 
             const btn = document.getElementById('btnSubmitForm');
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
@@ -854,7 +1007,7 @@
 
             fetch(GAS_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: 'upsertData', data: payload, prod_type: sessionProdType })
+                body: JSON.stringify({ action: 'upsertDataMulti', rows: rows, prod_type: sessionProdType })
             })
             .then(res => res.json())
             .then(res => {
@@ -866,6 +1019,46 @@
             })
             .catch(err => { Swal.fire('Gagal Jaringan', 'Periksa koneksi internet.', 'error'); })
             .finally(() => { btn.innerHTML = '<i class="bi bi-save"></i> Simpan Data'; btn.disabled = false; });
+        }
+
+        // ================== HAPUS DATA ==================
+        function deleteData() {
+            const packingNo = document.getElementById('input_packing_no').value;
+            if (!packingNo) return;
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Hapus Data?',
+                html: `Baris data dengan Packing No <b>${packingNo}</b> akan dihapus permanen dari database.<br>Tindakan ini tidak bisa dibatalkan.`,
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-trash"></i> Ya, Hapus',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc3545',
+                reverseButtons: true
+            }).then(result => {
+                if (!result.isConfirmed) return;
+
+                const btn = document.getElementById('btnDeleteForm');
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menghapus...';
+                btn.disabled = true;
+
+                fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'deleteData', data: { packing_no: packingNo }, prod_type: sessionProdType })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        modalInstance.hide();
+                        Swal.fire({ icon: 'success', title: 'Data Dihapus', text: res.message, timer: 1500, showConfirmButton: false });
+                        fetchLiveData();
+                    } else {
+                        Swal.fire('Error Backend', res.message, 'error');
+                    }
+                })
+                .catch(() => { Swal.fire('Gagal Jaringan', 'Periksa koneksi internet.', 'error'); })
+                .finally(() => { btn.innerHTML = '<i class="bi bi-trash"></i> Hapus Data'; btn.disabled = false; });
+            });
         }
 
         function filterTable() {
@@ -1044,11 +1237,17 @@
             startQrScan();
         }
 
-        // NOTE: Mapping index QR ke nama field masih menunggu detail dari user.
-        // Sementara ini raw text dipecah per koma dan ditampilkan sebagai index[0..n].
+        // QR berisi 9 item dipisah koma. Yang dipakai cuma item pertama (index 0), untuk dibentuk jadi CC NO:
+        // IF(LEFT(data,1)="P", LEFT(data,17), LEFT(data,16))
+        function extractCcNo(rawFirstPart) {
+            const s = String(rawFirstPart || '').trim();
+            if (!s) return '';
+            return (s.charAt(0).toUpperCase() === 'P') ? s.substring(0, 17) : s.substring(0, 16);
+        }
+
         function onScanSuccess(decodedText) {
             stopQrScan();
-            document.getElementById('qrStatusText').classList.add('d-none');
+            document.getElementById('qrStatusText').classList.remove('d-none');
 
             const parts = decodedText.split(',');
             document.getElementById('qrRawText').innerText = decodedText;
@@ -1059,6 +1258,115 @@
             });
             document.getElementById('qrFieldTableBody').innerHTML = rows;
             document.getElementById('qrResultBox').classList.remove('d-none');
+
+            const ccNo = extractCcNo(parts[0]);
+            if (!ccNo) {
+                document.getElementById('qrStatusText').innerText = 'CC NO tidak terbaca dari hasil scan.';
+                return;
+            }
+            document.getElementById('qrStatusText').innerText = 'CC NO: ' + ccNo + ' — mencari data di plan_all...';
+            lookupPlanAndOpenForm(ccNo);
+        }
+
+        // Cari data master (customer, spec, ukuran, dll) di sheet "plan_all" berdasarkan CC NO,
+        // lalu buka form Input Production Report dengan field yang sudah terisi otomatis.
+        function lookupPlanAndOpenForm(ccNo) {
+            Swal.fire({ title: 'Mencari Data...', text: 'CC NO: ' + ccNo, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getPlanByCcNo', cc_no: ccNo })
+            })
+            .then(res => res.json())
+            .then(res => {
+                Swal.close();
+                if (res.status === 'success') {
+                    qrModalInstance.hide();
+                    openProdEntryForm(ccNo, res.data);
+                } else {
+                    Swal.fire('Data Tidak Ditemukan', res.message, 'warning');
+                }
+            })
+            .catch(() => {
+                Swal.close();
+                Swal.fire('Gagal Jaringan', 'Periksa koneksi internet.', 'error');
+            });
+        }
+
+        // ================== MODAL: INPUT MANUAL (ANTISIPASI QR TIDAK TERBACA) ==================
+        function openManualModal() {
+            Swal.fire({
+                title: 'Input Manual',
+                text: 'Masukkan CC NO / Packing No sesuai yang tertera di label (kode QR tidak bisa dibaca).',
+                input: 'text',
+                inputPlaceholder: 'Contoh: P12345678901234567',
+                showCancelButton: true,
+                confirmButtonText: 'Cari & Lanjutkan',
+                cancelButtonText: 'Batal',
+                inputValidator: (value) => { if (!value || !value.trim()) return 'CC NO wajib diisi.'; }
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                const ccNo = result.value.trim();
+
+                Swal.fire({ title: 'Mencari Data...', text: 'CC NO: ' + ccNo, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getPlanByCcNo', cc_no: ccNo })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    Swal.close();
+                    if (res.status === 'success') {
+                        openProdEntryForm(ccNo, res.data);
+                    } else {
+                        // Tidak ketemu di plan_all -> tetap buka form, packing_no terisi dari input manual,
+                        // sisanya dikosongkan supaya member isi sendiri.
+                        Swal.fire({ icon: 'info', title: 'Data Plan Tidak Ditemukan', text: (res.message || '') + ' Form dibuka kosong, silakan isi manual.', timer: 2500, showConfirmButton: false });
+                        openProdEntryForm(ccNo, {});
+                    }
+                })
+                .catch(() => {
+                    Swal.close();
+                    openProdEntryForm(ccNo, {});
+                });
+            });
+        }
+
+        // Buka modal Input Production Report untuk entri BARU (dari hasil scan QR atau input manual),
+        // field SHARED diisi dari data plan_all (kalau ada), lalu jumlah tab Divide disesuaikan dari kolom divide_no.
+        function openProdEntryForm(ccNo, planData) {
+            planData = planData || {};
+
+            document.getElementById('prodForm').reset();
+            initDivideTabs();
+
+            document.getElementById('m_packing_no').innerText = ccNo;
+            document.getElementById('m_customer_size').innerText = `${planData.customer || '-'} | ${planData.product_size || '-'}`;
+            document.getElementById('input_packing_no').value = ccNo;
+
+            const planFieldMap = {
+                customer: planData.customer,
+                spec: planData.spec,
+                'mc/Semi_prod_size': planData['mc/Semi_prod_size'],
+                product_size: planData.product_size,
+                Cut: planData.Cut,
+                weight_actual: planData.weight_actual
+            };
+            Object.keys(planFieldMap).forEach(col => {
+                const el = document.querySelector(`#prodForm [data-col="${col}"]`);
+                const v = planFieldMap[col];
+                if (el && v !== undefined && v !== null && v !== '') el.value = v;
+            });
+
+            const planDivide = parseInt(planData.divide_no);
+            document.getElementById('input_devide').value = (planDivide >= 2 && planDivide <= MAX_DIVIDE) ? String(planDivide) : 'No Divide';
+            onDevideChange();
+
+            setTimeNow('time_start_proses_1');
+            document.getElementById('div_coil_set_lifter_1').style.display = 'none';
+
+            modalInstance.show();
         }
 
         // ================== HEADER PRODUKSI DI BAR ATAS ==================
@@ -1070,7 +1378,7 @@
         }
 
         function loadHeaderInfo() {
-            if (!sessionLine || sessionLine === 'OFFICE') return;
+            if (!sessionLine || NON_LINE_VALUES.includes(sessionLine)) return;
             const reportId = buildSessionReportId();
 
             fetch(GAS_URL, {
@@ -1124,6 +1432,7 @@
         }
 
         updateClock();
+        initDivideTabs();
     </script>
 </body>
 </html>
