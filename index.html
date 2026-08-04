@@ -671,8 +671,9 @@
                     <div id="qr-reader"></div>
                     <div class="text-center text-muted small mt-2" id="qrStatusText">Arahkan kamera ke kode QR...</div>
 
-                    <div id="qrManualFallback" class="text-center mt-2 d-none">
-                        <button type="button" class="btn btn-outline-success btn-sm px-3" onclick="switchToManualFromQr()">
+                    <div id="qrCameraErrorBox" class="text-center d-none py-2">
+                        <div class="text-muted small mb-3" id="qrCameraErrorText"></div>
+                        <button type="button" class="btn btn-outline-success btn-sm" data-bs-dismiss="modal" onclick="openManualModal()">
                             <i class="bi bi-pencil-square"></i> Input Manual Saja
                         </button>
                     </div>
@@ -2306,7 +2307,7 @@
 
         function openQrModal() {
             document.getElementById('qrResultBox').classList.add('d-none');
-            document.getElementById('qrManualFallback').classList.add('d-none');
+            document.getElementById('qrCameraErrorBox').classList.add('d-none');
             document.getElementById('qrStatusText').innerText = 'Arahkan kamera ke kode QR...';
             document.getElementById('qrStatusText').classList.remove('d-none');
             qrModalInstance.show();
@@ -2315,51 +2316,52 @@
         document.getElementById('qrModal').addEventListener('shown.bs.modal', startQrScan);
         document.getElementById('qrModal').addEventListener('hidden.bs.modal', stopQrScan);
 
-        // Tampilkan pesan error kamera yang jelas & actionable, plus tombol "Input Manual Saja" supaya
-        // operator tidak buntu kalau kamera memang tidak bisa dipakai di perangkat/browser itu.
-        function showQrCameraError(msg) {
-            document.getElementById('qrStatusText').innerText = msg;
-            document.getElementById('qrManualFallback').classList.remove('d-none');
+        function showQrReaderUi() {
+            document.getElementById('qr-reader').classList.remove('d-none');
+            document.getElementById('qrStatusText').classList.remove('d-none');
+            document.getElementById('qrCameraErrorBox').classList.add('d-none');
         }
 
-        function switchToManualFromQr() {
-            qrModalInstance.hide();
-            setTimeout(openManualModal, 300); // beri jeda supaya modal QR selesai tertutup dulu
+        function showCameraError(message) {
+            document.getElementById('qr-reader').classList.add('d-none');
+            document.getElementById('qrStatusText').classList.add('d-none');
+            document.getElementById('qrCameraErrorText').innerText = message;
+            document.getElementById('qrCameraErrorBox').classList.remove('d-none');
         }
 
-        // CATATAN PERBAIKAN KAMERA: sebelumnya scanner langsung dijalankan pakai constraint
-        // { facingMode: 'environment' }, yang di sebagian browser/WebView (terutama browser bawaan
-        // aplikasi lain seperti WhatsApp/Instagram, atau WebView Android versi lama) memicu error
-        // "Camera streaming not supported by the browser." meskipun kameranya sendiri normal.
-        // Sekarang daftar kamera dicek dulu lewat Html5Qrcode.getCameras() lalu dipilih kamera
-        // belakang secara eksplisit lewat ID kameranya -- cara ini didukung lebih luas.
+        const MSG_CAMERA_FALLBACK = 'Browser/aplikasi ini tidak mendukung akses kamera. Kalau link ini dibuka dari dalam WhatsApp/Instagram/aplikasi lain, coba buka langsung di Chrome atau Safari.';
+
         function startQrScan() {
-            document.getElementById('qrManualFallback').classList.add('d-none');
+            showQrReaderUi();
+            document.getElementById('qrStatusText').innerText = 'Arahkan kamera ke kode QR...';
 
+            // Kamera browser (getUserMedia) cuma tersedia di HTTPS (atau localhost) dan di browser yang
+            // memang mendukungnya. Banyak in-app browser (WhatsApp, Instagram, dll) sengaja memblokirnya,
+            // jadi daripada nyangkut di modal kosong, langsung tampilkan fallback + tombol Input Manual.
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showQrCameraError('Browser/aplikasi ini tidak mendukung akses kamera. Kalau link ini dibuka dari dalam WhatsApp/Instagram/aplikasi lain, coba buka langsung di Chrome atau Safari.');
+                showCameraError(MSG_CAMERA_FALLBACK);
+                return;
+            }
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                showCameraError('Akses kamera butuh koneksi HTTPS. Buka halaman ini lewat link https://, bukan http://.');
                 return;
             }
 
             qrScanner = new Html5Qrcode('qr-reader');
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            Html5Qrcode.getCameras().then(cameras => {
-                if (!cameras || !cameras.length) {
-                    showQrCameraError('Kamera tidak terdeteksi di perangkat ini. Pastikan perangkat punya kamera aktif, lalu coba lagi.');
-                    return;
-                }
-                // Pilih kamera belakang kalau labelnya ketahuan (mis. mengandung "back"), kalau tidak
-                // ketahuan pakai kamera terakhir di daftar (biasanya kamera belakang pada HP Android).
-                const backCam = cameras.find(c => /back|belakang|rear|environment/i.test(c.label || ''));
-                const cameraId = (backCam || cameras[cameras.length - 1]).id;
-
-                qrScanner.start(cameraId, config, onScanSuccess).catch(err => {
-                    showQrCameraError('Gagal membuka kamera: ' + err + '. Coba izinkan akses kamera untuk browser ini lewat ikon gembok di address bar, atau lewat Pengaturan HP > Aplikasi > (nama browser) > Izin > Kamera.');
+            qrScanner.start({ facingMode: 'environment' }, config, onScanSuccess)
+                .catch(err => {
+                    const errName = String((err && err.name) || err || '');
+                    if (errName.includes('NotAllowedError') || errName.includes('PermissionDenied')) {
+                        showCameraError('Izin akses kamera ditolak. Aktifkan izin kamera untuk browser ini lewat pengaturan HP, lalu coba lagi.');
+                    } else if (errName.includes('NotFoundError') || errName.includes('DevicesNotFound')) {
+                        showCameraError('Kamera tidak ditemukan di perangkat ini.');
+                    } else if (errName.includes('NotReadableError')) {
+                        showCameraError('Kamera sedang dipakai aplikasi lain. Tutup aplikasi kamera lain lalu coba lagi.');
+                    } else {
+                        showCameraError(MSG_CAMERA_FALLBACK);
+                    }
                 });
-            }).catch(err => {
-                showQrCameraError('Gagal mengakses kamera: ' + err + '. Pastikan izin kamera untuk browser ini sudah diizinkan, lalu coba lagi.');
-            });
         }
 
         function stopQrScan() {
@@ -2371,8 +2373,6 @@
 
         function restartQrScan() {
             document.getElementById('qrResultBox').classList.add('d-none');
-            document.getElementById('qrStatusText').classList.remove('d-none');
-            document.getElementById('qrStatusText').innerText = 'Arahkan kamera ke kode QR...';
             startQrScan();
         }
 
