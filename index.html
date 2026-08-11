@@ -1661,10 +1661,11 @@
 
         function formatTimeShow(val) {
             if (!val) return '--:--';
-            // Backend sekarang mengirim "HH:mm" (fixed WIB) langsung — pakai apa adanya,
-            // JANGAN di-parse ulang lewat new Date() karena hasilnya akan tergantung
-            // timezone device (itu penyebab jam beda-beda antara PC & tablet).
-            if (/^\d{1,2}:\d{2}/.test(val)) return String(val).slice(0, 5);
+            // Backend sekarang kirim teks APA ADANYA dari Google Sheets (getDisplayValues),
+            // jadi tidak perlu konversi timezone di sini sama sekali -- tinggal rapikan format
+            // "H:mm" / "H:mm:ss" jadi "HH:mm" (buang detik, tambah leading zero kalau perlu).
+            const m = String(val).match(/^(\d{1,2}):(\d{2})/);
+            if (m) return String(m[1]).padStart(2, '0') + ':' + m[2];
             // Fallback untuk kemungkinan data lama yang masih berupa ISO string.
             try { let d = new Date(val); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
             catch(e) { return val; }
