@@ -1659,9 +1659,15 @@
             });
         }
 
-        function formatTimeShow(isoString) {
-            try { let d = new Date(isoString); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } 
-            catch(e) { return isoString; }
+        function formatTimeShow(val) {
+            if (!val) return '--:--';
+            // Backend sekarang mengirim "HH:mm" (fixed WIB) langsung — pakai apa adanya,
+            // JANGAN di-parse ulang lewat new Date() karena hasilnya akan tergantung
+            // timezone device (itu penyebab jam beda-beda antara PC & tablet).
+            if (/^\d{1,2}:\d{2}/.test(val)) return String(val).slice(0, 5);
+            // Fallback untuk kemungkinan data lama yang masih berupa ISO string.
+            try { let d = new Date(val); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+            catch(e) { return val; }
         }
 
         // Kalau Devide >= 2, backend menyimpan beberapa baris dengan packing_no yang SAMA (dibedakan lewat divide_no).
