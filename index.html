@@ -1722,7 +1722,7 @@
         const PER_DIVIDE_FIELDS_COMMON = [
             'time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar',
             'dt_tbm', 'dt_packing_coil_back', 'dt_waiting_mc', 'dt_waiting_hagumi', 'dt_waiting_crane',
-            'dt_hagumi_separator', 'dt_winder_top_end', 'dt_cleaning_mesin', 'dt_machine_problem', 'dt_other',
+            'dt_hagumi_separator', 'dt_winder_top_end', 'dt_cleaning_mesin', 'dt_machine_problem', 'dt_other', 'dt_other_note',
             'line_speed', 'remark'
         ];
         const PER_DIVIDE_FIELDS_SHEET_EXTRA = ['qty_fg', 'qty_ng', 'qty_total'];
@@ -1755,6 +1755,18 @@
         ];
 
         const MAX_DIVIDE = 5;
+
+        // Munculkan kolom "Note" di bawah "Other" hanya kalau Other diisi (tidak kosong).
+        // Kalau Other dikosongkan lagi, Note ikut disembunyikan (nilainya TIDAK otomatis dihapus,
+        // supaya kalau user salah pencet tidak kehilangan catatan yang sudah diketik -- tapi
+        // sebaiknya user kosongkan juga Note-nya kalau memang Other jadi tidak dipakai).
+        function toggleOtherNote(idx) {
+            const otherEl = document.getElementById(`dt_other_${idx}`);
+            const wrap = document.getElementById(`dt_other_note_wrap_${idx}`);
+            if (!wrap) return;
+            const val = otherEl ? String(otherEl.value).trim() : '';
+            wrap.classList.toggle('d-none', val === '');
+        }
 
         function getFieldEl(col) {
             return col.startsWith('time_') ? document.getElementById(col) : document.querySelector(`#prodForm [data-col="${col}"]`);
@@ -1846,11 +1858,24 @@
 
         // Bangun HTML 1 pane Divide (dipakai untuk semua index 1..MAX_DIVIDE, termasuk kasus "No Divide" = pane 1 saja)
         function buildDividePaneHTML(idx) {
-            const downtimeInputs = DOWNTIME_COLS.map(dc => `
+            const downtimeInputs = DOWNTIME_COLS.map(dc => {
+                if (dc.col === 'dt_other') {
+                    return `
+                <div class="col-6 col-md-3">
+                    <label class="small text-secondary">${dc.label}</label>
+                    <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}" oninput="toggleOtherNote(${idx})">
+                </div>
+                <div class="col-12 d-none" id="dt_other_note_wrap_${idx}">
+                    <label class="small text-secondary">Note (alasan Other)</label>
+                    <input type="text" class="form-control form-control-sm" id="dt_other_note_${idx}" placeholder="Jelaskan alasan Other...">
+                </div>`;
+                }
+                return `
                 <div class="col-6 col-md-3">
                     <label class="small text-secondary">${dc.label}</label>
                     <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}">
-                </div>`).join('');
+                </div>`;
+            }).join('');
 
             return `
             <div class="divide-pane d-none" data-divide-idx="${idx}">
@@ -1987,6 +2012,7 @@
                 const el = document.getElementById(`${col}_${idx}`);
                 if (el) el.value = '';
             });
+            toggleOtherNote(idx); // Other ikut dikosongkan -> Note ikut disembunyikan
             resetNgRows(idx);
         }
 
@@ -2052,6 +2078,7 @@
                     if (!el || v === undefined || v === null || v === '') return;
                     el.value = col.startsWith('time_') ? formatTimeShow(v) : v;
                 });
+                toggleOtherNote(idx); // pastikan Note tampil kalau Other sudah terisi dari data tersimpan
                 // kind_ng & ng disimpan sebagai 1 string dipisah koma -> pecah lagi jadi baris Jenis NG/Detail NG
                 if (isSheetType()) fillNgRows(idx, getPdValueCI(pd, 'kind_ng'), getPdValueCI(pd, 'ng'));
             });
