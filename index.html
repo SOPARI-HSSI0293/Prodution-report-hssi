@@ -707,6 +707,13 @@
         let globalData = []; 
         let sessionLine = '';
         let sessionMember = '';
+        // Report_ID sesi yang SEDANG AKTIF (tanggal kerja + shift + line). Ini SATU-SATUNYA sumber
+        // kebenaran untuk report_id -- diisi awal dari tebakan jam device (getShiftDateInfo) sebagai
+        // default saat aplikasi baru dibuka, lalu di-OVERRIDE begitu user submit Input Header dengan
+        // Tanggal Kerja & Shift yang dipilih manual. Semua pemanggilan API (tarik data live, simpan
+        // data produksi, hapus data) WAJIB pakai variabel ini -- supaya tidak ada lagi 2 tebakan jam
+        // yang berbeda (device vs server) yang bisa membuat data "salah shift" saat disimpan.
+        let sessionReportId = null;
         let sessionRole = '';
         let sessionDept = '';
         let sessionProdType = null; // 'coil' | 'sheet' — ditentukan backend dari kolom "departemen" di db_users
@@ -2097,7 +2104,7 @@
             const divideCount = getDivideCount();
             const packingNo = document.getElementById('input_packing_no').value;
 
-            const sharedPayload = { line_produksi: sessionLine, line_member: sessionMember, packing_no: packingNo };
+            const sharedPayload = { line_produksi: sessionLine, line_member: sessionMember, packing_no: packingNo, report_id: buildSessionReportId() };
             getSharedFields().forEach(col => {
                 const el = document.querySelector(`#prodForm [data-col="${col}"]`);
                 sharedPayload[col] = el ? el.value : '';
@@ -2326,6 +2333,11 @@
                 if (res.status === 'success') {
                     headerModalInstance.hide();
                     Swal.fire({ icon: 'success', title: 'Header Tersimpan!', text: res.message, timer: 1500, showConfirmButton: false });
+                    // Sesi aktif sekarang mengikuti Tanggal Kerja & Shift yang DIPILIH MANUAL di sini --
+                    // bukan tebakan jam device lagi. Ini mencegah data produksi tersimpan salah shift
+                    // (mis. tertimpa ke baris shift sebelumnya) tepat di awal shift.
+                    sessionReportId = reportId;
+                    fetchLiveData();
                     loadHeaderInfo();
                 } else {
                     Swal.fire('Error Backend', res.message, 'error');
@@ -2545,6 +2557,10 @@
         // ================== HEADER PRODUKSI DI BAR ATAS ==================
         // Report_ID sesi berjalan (bukan dari form modal) dipakai untuk menarik data Leader/OT/Member terbaru
         function buildSessionReportId() {
+            // Prioritaskan Report_ID eksplisit (dari Input Header yang sudah user submit/pilih manual).
+            // Tebakan jam device (getShiftDateInfo) HANYA dipakai sebagai fallback awal, sebelum ada
+            // sesi header yang aktif -- supaya tabel live tidak kosong total saat aplikasi baru dibuka.
+            if (sessionReportId) return sessionReportId;
             const tgl = getTodayISO().replaceAll('-', '');
             const shift = getCurrentShiftGuess();
             return `${tgl}-${shift}-${sessionLine}`;
@@ -2553,6 +2569,9 @@
         function loadHeaderInfo() {
             if (!sessionLine || NON_LINE_VALUES.includes(sessionLine)) return;
             const reportId = buildSessionReportId();
+            // Jadikan tebakan ini sesi aktif SEMENTARA, hanya kalau belum ada sesi eksplisit dari
+            // Input Header. Kalau user sudah pernah submit Input Header, JANGAN timpa pilihan mereka.
+            if (!sessionReportId) sessionReportId = reportId;
 
             fetch(GAS_URL, {
                 method: 'POST',
