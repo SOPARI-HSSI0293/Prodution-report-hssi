@@ -1040,25 +1040,28 @@
         }
 
         // Bangun HTML 1 pane Divide (dipakai untuk semua index 1..MAX_DIVIDE, termasuk kasus "No Divide" = pane 1 saja)
-        function buildDividePaneHTML(idx) {
-            const downtimeInputs = DOWNTIME_COLS.map(dc => {
-                if (dc.col === 'dt_other') {
-                    return `
-                <div class="col-6 col-md-3">
-                    <label class="small text-secondary">${dc.label}</label>
-                    <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}" oninput="toggleOtherNote(${idx})">
-                </div>
-                <div class="col-12 d-none" id="dt_other_note_wrap_${idx}">
-                    <label class="small text-secondary">Note (alasan Other)</label>
-                    <input type="text" class="form-control form-control-sm" id="dt_other_note_${idx}" placeholder="Jelaskan alasan Other...">
-                </div>`;
-                }
-                return `
-                <div class="col-6 col-md-3">
-                    <label class="small text-secondary">${dc.label}</label>
-                    <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}">
-                </div>`;
-            }).join('');
+function buildDividePaneHTML(idx) {
+    const downtimeInputs = DOWNTIME_COLS.map(dc => {
+        if (dc.col === 'dt_other') {
+            return `
+            <div class="col-6 col-md-3">
+                <label class="small text-secondary">${dc.label}</label>
+                <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}">
+            </div>
+            <div class="col-12" id="dt_other_note_wrap_${idx}">
+                <label class="small text-secondary">Note (tulis keterangan Downtime)</label>
+                <input type="text" class="form-control form-control-sm" id="dt_other_note_${idx}" placeholder="Jelaskan rincian downtime jika di perlukan...">
+            </div>`;
+        }
+        return `
+            <div class="col-6 col-md-3">
+                <label class="small text-secondary">${dc.label}</label>
+                <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}">
+            </div>`;
+    }).join('');
+    return downtimeInputs;
+}
+
 
             return `
             <div class="divide-pane d-none" data-divide-idx="${idx}">
