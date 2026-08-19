@@ -939,16 +939,12 @@
 
         const MAX_DIVIDE = 5;
 
-        // Munculkan kolom "Note" di bawah "Other" hanya kalau Other diisi (tidak kosong).
-        // Kalau Other dikosongkan lagi, Note ikut disembunyikan (nilainya TIDAK otomatis dihapus,
-        // supaya kalau user salah pencet tidak kehilangan catatan yang sudah diketik -- tapi
-        // sebaiknya user kosongkan juga Note-nya kalau memang Other jadi tidak dipakai).
+        // Note (penjelasan downtime) SELALU ditampilkan di bawah kolom "Other", terlepas dari nilai
+        // Other terisi atau kosong -- sebelumnya kolom ini hanya muncul kalau Other diisi.
         function toggleOtherNote(idx) {
-            const otherEl = document.getElementById(`dt_other_${idx}`);
             const wrap = document.getElementById(`dt_other_note_wrap_${idx}`);
             if (!wrap) return;
-            const val = otherEl ? String(otherEl.value).trim() : '';
-            wrap.classList.toggle('d-none', val === '');
+            wrap.classList.remove('d-none');
         }
 
         function getFieldEl(col) {
@@ -1048,9 +1044,9 @@ function buildDividePaneHTML(idx) {
                     <label class="small text-secondary">${dc.label}</label>
                     <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}" oninput="toggleOtherNote(${idx})">
                 </div>
-                <div class="col-12 d-none" id="dt_other_note_wrap_${idx}">
-                    <label class="small text-secondary">Note (alasan Other)</label>
-                    <input type="text" class="form-control form-control-sm" id="dt_other_note_${idx}" placeholder="Jelaskan alasan Other...">
+                <div class="col-12" id="dt_other_note_wrap_${idx}">
+                    <label class="small text-secondary">Note (penjelasan downtime)</label>
+                    <input type="text" class="form-control form-control-sm" id="dt_other_note_${idx}" placeholder="Jelaskan penjelasan downtime...">
                 </div>`;
                 }
                 return `
@@ -1196,7 +1192,7 @@ function buildDividePaneHTML(idx) {
                 const el = document.getElementById(`${col}_${idx}`);
                 if (el) el.value = '';
             });
-            toggleOtherNote(idx); // Other ikut dikosongkan -> Note ikut disembunyikan
+            toggleOtherNote(idx); // Note tetap tampil (selalu visible), field-nya saja yang dikosongkan
             resetNgRows(idx);
         }
 
@@ -1262,7 +1258,7 @@ function buildDividePaneHTML(idx) {
                     if (!el || v === undefined || v === null || v === '') return;
                     el.value = col.startsWith('time_') ? formatTimeShow(v) : v;
                 });
-                toggleOtherNote(idx); // pastikan Note tampil kalau Other sudah terisi dari data tersimpan
+                toggleOtherNote(idx); // Note tetap tampil; hanya memastikan visible walau field-nya kosong
                 // kind_ng & ng disimpan sebagai 1 string dipisah koma -> pecah lagi jadi baris Jenis NG/Detail NG
                 if (isSheetType()) fillNgRows(idx, getPdValueCI(pd, 'kind_ng'), getPdValueCI(pd, 'ng'));
             });
