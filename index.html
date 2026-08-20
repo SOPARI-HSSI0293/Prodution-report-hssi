@@ -796,7 +796,12 @@
         function renderTable(dataArray) {
             const groups = groupByPackingNo(dataArray);
             let tbody = '';
-            groups.forEach((g, i) => {
+            // Nomor Seq HANYA dihitung untuk baris produksi "asli" (kolom mc/Semi_prod_size terisi) --
+            // sama seperti kriteria counter Coil/Skid di updateProductionMetrics(). Baris non-produksi
+            // (mis. packing_no "X") tidak ikut dihitung dan Seq-nya ditampilkan "-", supaya nomor urut
+            // baris produksi tidak "digeser" oleh baris semacam ini.
+            let seqCounter = 0;
+            groups.forEach((g) => {
                 let p = g.plan_data;
                 let pd = g.items[0].prod_details;
                 let bgClass = g.status === 'Wait Proses' ? 'bg-wait' : g.status === 'On Proses' ? 'bg-onproses' : 'bg-finish';
@@ -809,10 +814,13 @@
                 let mcSemiSize = pd['mc/Semi_prod_size'] ? `<br><small class="text-muted">${pd['mc/Semi_prod_size']}</small>` : '';
                 const rowspan = g.divideCount > 1 ? g.divideCount : 1;
 
+                const isRealProd = String(pd['mc/Semi_prod_size'] || '').trim() !== '';
+                const seqLabel = isRealProd ? String(++seqCounter) : '-';
+
                 tbody += `
                     <tr onclick="openModal('${g.packing_no}')" title="Klik baris untuk edit data">
                         <td class="text-center" style="white-space:nowrap;" rowspan="${rowspan}"><span class="status-badge ${bgClass}">${g.status}</span></td>
-                        <td class="text-center" style="white-space:nowrap;" rowspan="${rowspan}">${i + 1}</td>
+                        <td class="text-center" style="white-space:nowrap;" rowspan="${rowspan}">${seqLabel}</td>
                         <td class="fw-bold text-primary" rowspan="${rowspan}">${g.packing_no}${divideBadge}${weightActual}</td>
                         <td rowspan="${rowspan}">${p.customer}${mcSemiSize}</td>
                         <td rowspan="${rowspan}"><small>${p.spec}<br><b>${p.size}</b></small></td>
