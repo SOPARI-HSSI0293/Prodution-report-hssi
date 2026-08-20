@@ -1783,7 +1783,12 @@ function buildDividePaneHTML(idx) {
             let beratTotal = 0;
             (dataArray || []).forEach(item => {
                 const pd = item.prod_details || {};
-                if (pd.packing_no) packingSet.add(String(pd.packing_no).trim());
+                // Coil/Skid hanya dihitung untuk baris yang kolom "mc/Semi_prod_size"-nya TERISI --
+                // baris yang kosong (mis. packing_no "X" untuk kegiatan non-produksi yang tetap wajib
+                // direport, tapi bukan proses coil/sheet sesungguhnya) tidak dianggap 1 Coil/Skid,
+                // walaupun statusnya sudah Finish.
+                const mcSemiSize = String(pd['mc/Semi_prod_size'] || '').trim();
+                if (pd.packing_no && mcSemiSize !== '') packingSet.add(String(pd.packing_no).trim());
                 const w = parseFloat(pd.weight_actual);
                 if (!isNaN(w)) beratTotal += w;
             });
