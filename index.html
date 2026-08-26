@@ -346,8 +346,10 @@
                         </div>
 
                         <!-- Hasil Aktual Produksi (kolom: actual_width_mc, weight_actual, id_coil) — SAMA untuk semua Divide.
-                             total_length TIDAK lagi di sini -- sekarang jadi field per-Divide (lihat buildDividePaneHTML),
-                             supaya tiap Divide bisa diisi Total Length berbeda-beda, sama seperti kolom waktu. -->
+                             total_length TIDAK lagi di sini -- sekarang jadi field per-Divide KHUSUS COIL (lihat
+                             buildDividePaneHTML, data-prod-only="coil"), supaya tiap Divide bisa diisi Total Length
+                             berbeda-beda seperti kolom waktu, dan tidak ditampilkan/dikirim sama sekali untuk Sheet
+                             (db_prod_sheet_raw memang tidak punya kolom ini). -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-bold small">Actual Width MC</label>
@@ -897,8 +899,9 @@
         // Kolom yang SAMA untuk semua Divide (diisi sekali per packing_no).
         // Beda antara Coil (EMBOSS/Slitter/Mini Slitter) & Sheet (Leveler/Mini Leveler/Square Shear):
         // Coil punya "Cut" & "id_coil", Sheet tidak punya kedua kolom itu (db_prod_sheet_raw tidak punya kolomnya).
-        // "total_length" TIDAK lagi di sini -- sekarang jadi field PER-DIVIDE (lihat PER_DIVIDE_FIELDS_COMMON di bawah),
-        // supaya tiap Divide bisa punya Total Length sendiri, sama seperti kolom-kolom waktu.
+        // "total_length" TIDAK lagi di sini -- sekarang jadi field PER-DIVIDE KHUSUS COIL saja
+        // (lihat PER_DIVIDE_FIELDS_COIL_EXTRA di bawah), supaya tiap Divide Coil bisa punya Total Length
+        // sendiri seperti kolom-kolom waktu, dan sama sekali tidak muncul/dikirim untuk Sheet.
         const SHARED_DB_FIELDS_COIL = [
             'customer', 'spec', 'mc/Semi_prod_size', 'product_size', 'Cut', 'devide',
             'actual_width_mc', 'weight_actual', 'id_coil'
@@ -910,17 +913,21 @@
 
         // Kolom yang BISA BEDA nilainya di tiap Divide -> field-nya digandakan per index (_1, _2, ...)
         // Sheet punya tambahan kolom hasil QC (qty_fg, qty_ng, qty_total, kind_ng, ng) yang tidak ada di Coil.
+        // "total_length" HANYA untuk Coil -- sheet db_prod_sheet_raw memang tidak punya kolom ini, jadi
+        // dipisah ke PER_DIVIDE_FIELDS_COIL_EXTRA (bukan di daftar COMMON) supaya field ini tidak
+        // ditampilkan maupun dikirim ke backend sama sekali untuk prod_type 'sheet'.
         const PER_DIVIDE_FIELDS_COMMON = [
-            'time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar', 'total_length',
+            'time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar',
             'dt_tbm', 'dt_packing_coil_back', 'dt_waiting_mc', 'dt_waiting_hagumi', 'dt_waiting_crane',
             'dt_hagumi_separator', 'dt_winder_top_end', 'dt_cleaning_mesin', 'dt_machine_problem', 'dt_other', 'dt_other_note',
             'line_speed', 'remark'
         ];
+        const PER_DIVIDE_FIELDS_COIL_EXTRA = ['total_length'];
         const PER_DIVIDE_FIELDS_SHEET_EXTRA = ['qty_fg', 'qty_ng', 'qty_total'];
 
         function isSheetType() { return sessionProdType === 'sheet'; }
         function getSharedFields() { return isSheetType() ? SHARED_DB_FIELDS_SHEET : SHARED_DB_FIELDS_COIL; }
-        function getPerDivideFields() { return isSheetType() ? PER_DIVIDE_FIELDS_COMMON.concat(PER_DIVIDE_FIELDS_SHEET_EXTRA) : PER_DIVIDE_FIELDS_COMMON; }
+        function getPerDivideFields() { return isSheetType() ? PER_DIVIDE_FIELDS_COMMON.concat(PER_DIVIDE_FIELDS_SHEET_EXTRA) : PER_DIVIDE_FIELDS_COMMON.concat(PER_DIVIDE_FIELDS_COIL_EXTRA); }
 
         // Tampilkan/sembunyikan field yang khusus Coil atau khusus Sheet.
         // Dipanggil setelah login (sessionProdType baru diketahui) dan setiap modal/pane Divide dibangun ulang.
@@ -1098,7 +1105,7 @@ function buildDividePaneHTML(idx) {
                             <button class="btn btn-outline-secondary" type="button" onclick="setTimeNow('time_product_keluar_${idx}')"><i class="bi bi-clock"></i></button>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4" data-prod-only="coil">
                         <label class="form-label fw-bold small">Total Length</label>
                         <input type="number" class="form-control form-control-sm" id="total_length_${idx}">
                     </div>
