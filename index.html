@@ -345,23 +345,21 @@
                             </div>
                         </div>
 
-                        <!-- Hasil Aktual Produksi (kolom: actual_width_mc, weight_actual, id_coil, total_length) — SAMA untuk semua Divide -->
+                        <!-- Hasil Aktual Produksi (kolom: actual_width_mc, weight_actual, id_coil) — SAMA untuk semua Divide.
+                             total_length TIDAK lagi di sini -- sekarang jadi field per-Divide (lihat buildDividePaneHTML),
+                             supaya tiap Divide bisa diisi Total Length berbeda-beda, sama seperti kolom waktu. -->
                         <div class="row g-3 mb-3">
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label fw-bold small">Actual Width MC</label>
                                 <input type="number" step="0.01" class="form-control form-control-sm" data-col="actual_width_mc">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label fw-bold small">Weight Aktual</label>
                                 <input type="number" class="form-control form-control-sm" data-col="weight_actual">
                             </div>
-                            <div class="col-md-3" data-prod-only="coil">
+                            <div class="col-md-4" data-prod-only="coil">
                                 <label class="form-label fw-bold small">ID Coil</label>
                                 <input type="text" class="form-control form-control-sm" data-col="id_coil">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold small">Total Length</label>
-                                <input type="number" class="form-control form-control-sm" data-col="total_length">
                             </div>
                         </div>
 
@@ -899,19 +897,21 @@
         // Kolom yang SAMA untuk semua Divide (diisi sekali per packing_no).
         // Beda antara Coil (EMBOSS/Slitter/Mini Slitter) & Sheet (Leveler/Mini Leveler/Square Shear):
         // Coil punya "Cut" & "id_coil", Sheet tidak punya kedua kolom itu (db_prod_sheet_raw tidak punya kolomnya).
+        // "total_length" TIDAK lagi di sini -- sekarang jadi field PER-DIVIDE (lihat PER_DIVIDE_FIELDS_COMMON di bawah),
+        // supaya tiap Divide bisa punya Total Length sendiri, sama seperti kolom-kolom waktu.
         const SHARED_DB_FIELDS_COIL = [
             'customer', 'spec', 'mc/Semi_prod_size', 'product_size', 'Cut', 'devide',
-            'actual_width_mc', 'weight_actual', 'id_coil', 'total_length'
+            'actual_width_mc', 'weight_actual', 'id_coil'
         ];
         const SHARED_DB_FIELDS_SHEET = [
             'customer', 'spec', 'mc/Semi_prod_size', 'product_size', 'devide',
-            'actual_width_mc', 'weight_actual', 'total_length'
+            'actual_width_mc', 'weight_actual'
         ];
 
         // Kolom yang BISA BEDA nilainya di tiap Divide -> field-nya digandakan per index (_1, _2, ...)
         // Sheet punya tambahan kolom hasil QC (qty_fg, qty_ng, qty_total, kind_ng, ng) yang tidak ada di Coil.
         const PER_DIVIDE_FIELDS_COMMON = [
-            'time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar',
+            'time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar', 'total_length',
             'dt_tbm', 'dt_packing_coil_back', 'dt_waiting_mc', 'dt_waiting_hagumi', 'dt_waiting_crane',
             'dt_hagumi_separator', 'dt_winder_top_end', 'dt_cleaning_mesin', 'dt_machine_problem', 'dt_other', 'dt_other_note',
             'line_speed', 'remark'
@@ -1097,6 +1097,10 @@ function buildDividePaneHTML(idx) {
                             <input type="time" class="form-control" id="time_product_keluar_${idx}">
                             <button class="btn btn-outline-secondary" type="button" onclick="setTimeNow('time_product_keluar_${idx}')"><i class="bi bi-clock"></i></button>
                         </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small">Total Length</label>
+                        <input type="number" class="form-control form-control-sm" id="total_length_${idx}">
                     </div>
                 </div>
 
@@ -1296,7 +1300,13 @@ function buildDividePaneHTML(idx) {
                 const row = Object.assign({}, sharedPayload, { divide_no: divideCount > 1 ? String(i) : '' });
                 getPerDivideFields().forEach(col => {
                     const el = document.getElementById(`${col}_${i}`);
-                    row[col] = el ? el.value : '';
+                    let val = el ? el.value : '';
+                    // Remark sering diisi teks yang "terlihat seperti angka" (mis. "1000"), yang kalau dikirim
+                    // apa adanya bisa di-auto-convert oleh Google Sheets jadi Number lalu ditampilkan dalam
+                    // notasi ilmiah (mis. "1.00E+03"). Prefix apostrophe (') memaksa Apps Script/Sheets
+                    // menyimpannya sebagai TEXT murni -- apostrophe-nya sendiri tidak ikut tersimpan/tampil.
+                    if (col === 'remark' && val !== '') val = "'" + val;
+                    row[col] = val;
                 });
                 // Jenis NG & Detail NG dari baris dinamis digabung jadi string dipisah koma (kolom kind_ng & ng)
                 if (isSheetType()) {
