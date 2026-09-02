@@ -1804,20 +1804,28 @@ function buildDividePaneHTML(idx) {
         // produksi Line yang sedang aktif (globalData hasil fetchLiveData). Logikanya SAMA untuk semua
         // departemen (Coil maupun Sheet: Leveler/Mini Leveler/Square Shear).
         function updateProductionMetrics(dataArray) {
-            const packingSet = new Set();
+            // PENTING: Coil/Skid & Berat dihitung per GRUP packing_no (pakai groupByPackingNo() yang sama
+            // dipakai renderTable), BUKAN per baris mentah. weight_actual adalah field SHARED yang nilainya
+            // SAMA PERSIS di semua baris milik 1 packing_no (termasuk tiap Divide, atau kalau packing_no yang
+            // sama sempat diproses ulang dengan Report_ID yang sama sehingga tercatat lebih dari 1 baris) --
+            // kalau dijumlah per baris mentah, Berat jadi "dobel hitung". Dengan grouping, weight_actual
+            // diambil dari SATU baris representatif (items[0]) per packing_no, jadi 1 packing_no = 1 Coil/Skid
+            // & 1 kali hitung Berat, seberapa pun banyak baris mentah di baliknya.
+            // CATATAN: ini HANYA perubahan tampilan (frontend) -- data di sheet/database tidak diubah sama sekali.
+            const groups = groupByPackingNo(dataArray);
+            let coilSkidCount = 0;
             let beratTotal = 0;
-            (dataArray || []).forEach(item => {
-                const pd = item.prod_details || {};
-                // Coil/Skid hanya dihitung untuk baris yang kolom "mc/Semi_prod_size"-nya TERISI --
-                // baris yang kosong (mis. packing_no "X" untuk kegiatan non-produksi yang tetap wajib
-                // direport, tapi bukan proses coil/sheet sesungguhnya) tidak dianggap 1 Coil/Skid,
-                // walaupun statusnya sudah Finish.
+            groups.forEach(g => {
+                const pd = g.items[0].prod_details || {};
+                // Sama seperti kriteria Seq di renderTable: baris non-produksi (mis. packing_no "X" yang
+                // mc/Semi_prod_size-nya kosong) tidak dihitung sebagai Coil/Skid maupun ikut ke total Berat.
                 const mcSemiSize = String(pd['mc/Semi_prod_size'] || '').trim();
-                if (pd.packing_no && mcSemiSize !== '') packingSet.add(String(pd.packing_no).trim());
+                if (mcSemiSize === '') return;
+                coilSkidCount++;
                 const w = parseFloat(pd.weight_actual);
                 if (!isNaN(w)) beratTotal += w;
             });
-            document.getElementById('displayCoilSkid').innerText = packingSet.size;
+            document.getElementById('displayCoilSkid').innerText = coilSkidCount;
             document.getElementById('displayBerat').innerText = beratTotal.toLocaleString('id-ID', { maximumFractionDigits: 2 });
         }
 
