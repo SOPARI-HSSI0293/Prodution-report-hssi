@@ -361,7 +361,14 @@
                             </div>
                             <div class="col-md-4" data-prod-only="coil">
                                 <label class="form-label fw-bold small">ID Coil</label>
-                                <input type="text" class="form-control form-control-sm" data-col="id_coil">
+                                <input type="text" class="form-control form-control-sm" data-col="id_coil" list="idCoilOptions" placeholder="Pilih atau ketik nomor lain">
+                                <!-- datalist: kasih pilihan cepat 610/508/300, tapi field TETAP bisa diisi manual
+                                     angka lain bebas -- beda dengan <select>, datalist tidak membatasi input. -->
+                                <datalist id="idCoilOptions">
+                                    <option value="610">
+                                    <option value="508">
+                                    <option value="300">
+                                </datalist>
                             </div>
                         </div>
 
