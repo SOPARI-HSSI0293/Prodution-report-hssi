@@ -327,13 +327,17 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-bold small">Product Size</label>
-                                <input type="text" class="form-control form-control-sm" data-col="product_size">
+                                <!-- Sheet: Product Size bisa berisi beberapa ukuran dipisah "/" (mis. "1372.0/1787.0"),
+                                     mirip konsep Divide di Coil. oninput di sini otomatis menghitung jumlah bagian
+                                     dan mengatur Devide + tab pane (lihat onProductSizeInput()). Untuk Coil, handler
+                                     ini langsung return tanpa efek apa pun (lihat isSheetType() check di dalamnya). -->
+                                <input type="text" class="form-control form-control-sm" data-col="product_size" oninput="onProductSizeInput()">
                             </div>
                             <div class="col-md-4" data-prod-only="coil">
                                 <label class="form-label fw-bold small">Cut</label>
                                 <input type="text" class="form-control form-control-sm" data-col="Cut">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" data-prod-only="coil">
                                 <label class="form-label fw-bold small">Devide</label>
                                 <select class="form-select form-select-sm" data-col="devide" id="input_devide" onchange="onDevideChange()">
                                     <option value="No Divide">No Divide</option>
@@ -342,6 +346,15 @@
                                     <option value="4">4</option>
                                     <option value="5">5</option>
                                 </select>
+                            </div>
+                            <!-- Sheet TIDAK punya pilihan Devide manual -- jumlah "bagian" size dihitung OTOMATIS
+                                 dari banyaknya segmen "/" di Product Size (lihat onProductSizeInput()). Dropdown
+                                 #input_devide di atas tetap ada di DOM (disembunyikan untuk Sheet) supaya semua
+                                 logika lama (getDivideCount, onDevideChange, dst) tetap jalan tanpa perlu diubah --
+                                 nilainya di-set lewat JS, bukan dipilih manual oleh user. -->
+                            <div class="col-md-4 d-none" data-prod-only="sheet">
+                                <label class="form-label fw-bold small">Jumlah Size</label>
+                                <div class="form-control form-control-sm bg-light" id="sheetSizeCountDisplay">1 (otomatis dari Product Size)</div>
                             </div>
                         </div>
 
@@ -369,6 +382,43 @@
                                     <option value="508">
                                     <option value="300">
                                 </datalist>
+                            </div>
+                        </div>
+
+                        <!-- Waktu Proses -- KHUSUS SHEET: dipindah jadi SHARED (diisi 1x untuk seluruh Size),
+                             karena Coil Set Lifter/Start Proses/End Proses/Product Keluar mewakili jam kejadian
+                             mesin utk 1 coil yang sama, BUKAN atribut per-ukuran hasil potong (Devide/Size hanya
+                             memecah HASIL, bukan proses mesinnya). Untuk Coil, field yang sama TETAP per-Divide
+                             (lihat buildDividePaneHTML/timeFieldsHTML) karena tiap Divide Coil bisa diproses di
+                             jam yang berbeda-beda. -->
+                        <div class="row g-3 mb-3 d-none" data-prod-only="sheet">
+                            <div class="col-6 col-md-3" id="div_coil_set_lifter">
+                                <label class="form-label fw-bold small">Coil Set Lifter</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="time" class="form-control" data-col="time_coil_set_lifter" id="time_coil_set_lifter">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="setTimeNow('time_coil_set_lifter')"><i class="bi bi-clock"></i></button>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small">Start Proses</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="time" class="form-control" data-col="time_start_proses" id="time_start_proses">
+                                    <button class="btn btn-outline-primary" type="button" onclick="setTimeNow('time_start_proses')"><i class="bi bi-clock"></i></button>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small">End Proses (Finish)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="time" class="form-control" data-col="time_end_proses" id="time_end_proses">
+                                    <button class="btn btn-outline-success" type="button" onclick="setTimeNow('time_end_proses')"><i class="bi bi-clock"></i></button>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small">Product Keluar</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="time" class="form-control" data-col="time_product_keluar" id="time_product_keluar">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="setTimeNow('time_product_keluar')"><i class="bi bi-clock"></i></button>
+                                </div>
                             </div>
                         </div>
 
@@ -913,10 +963,19 @@
             'customer', 'spec', 'mc/Semi_prod_size', 'product_size', 'Cut', 'devide',
             'actual_width_mc', 'weight_actual', 'id_coil'
         ];
+        // Sheet: time_coil_set_lifter/time_start_proses/time_end_proses/time_product_keluar SEKARANG SHARED
+        // (diisi 1x untuk seluruh Size, lihat blok HTML "Waktu Proses" data-prod-only="sheet") -- ini beda
+        // dari Coil, yang tetap menyimpan field waktu ini per-Divide (lihat TIME_FIELDS_PER_DIVIDE_COIL).
         const SHARED_DB_FIELDS_SHEET = [
             'customer', 'spec', 'mc/Semi_prod_size', 'product_size', 'devide',
-            'actual_width_mc', 'weight_actual'
+            'actual_width_mc', 'weight_actual',
+            'time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar'
         ];
+
+        // Waktu proses KHUSUS COIL -- tiap Divide Coil bisa diproses di jam yang berbeda-beda, jadi field
+        // ini TETAP per-Divide (id_${idx}) hanya untuk Coil. Untuk Sheet, field yang sama sudah dipindah
+        // ke SHARED_DB_FIELDS_SHEET di atas (mewakili 1 jam kejadian mesin untuk seluruh Size sekaligus).
+        const TIME_FIELDS_PER_DIVIDE_COIL = ['time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar'];
 
         // Kolom yang BISA BEDA nilainya di tiap Divide -> field-nya digandakan per index (_1, _2, ...)
         // Sheet punya tambahan kolom hasil QC (qty_fg, qty_ng, qty_total, kind_ng, ng) yang tidak ada di Coil.
@@ -924,17 +983,21 @@
         // dipisah ke PER_DIVIDE_FIELDS_COIL_EXTRA (bukan di daftar COMMON) supaya field ini tidak
         // ditampilkan maupun dikirim ke backend sama sekali untuk prod_type 'sheet'.
         const PER_DIVIDE_FIELDS_COMMON = [
-            'time_coil_set_lifter', 'time_start_proses', 'time_end_proses', 'time_product_keluar',
             'dt_tbm', 'dt_packing_coil_back', 'dt_waiting_mc', 'dt_waiting_hagumi', 'dt_waiting_crane',
             'dt_hagumi_separator', 'dt_winder_top_end', 'dt_cleaning_mesin', 'dt_machine_problem', 'dt_other', 'dt_other_note',
             'line_speed', 'remark'
         ];
-        const PER_DIVIDE_FIELDS_COIL_EXTRA = ['total_length'];
+        const PER_DIVIDE_FIELDS_COIL_EXTRA = TIME_FIELDS_PER_DIVIDE_COIL.concat(['total_length']);
         const PER_DIVIDE_FIELDS_SHEET_EXTRA = ['qty_fg', 'qty_ng', 'qty_total'];
 
         function isSheetType() { return sessionProdType === 'sheet'; }
         function getSharedFields() { return isSheetType() ? SHARED_DB_FIELDS_SHEET : SHARED_DB_FIELDS_COIL; }
         function getPerDivideFields() { return isSheetType() ? PER_DIVIDE_FIELDS_COMMON.concat(PER_DIVIDE_FIELDS_SHEET_EXTRA) : PER_DIVIDE_FIELDS_COMMON.concat(PER_DIVIDE_FIELDS_COIL_EXTRA); }
+
+        // Sheet: Coil Set Lifter & Start Proses sekarang field SHARED (id polos, tanpa suffix _idx).
+        // Coil: field yang sama masih per-Divide, tetap pakai id pane pertama (_1), seperti semula.
+        function getCoilSetLifterWrapId() { return isSheetType() ? 'div_coil_set_lifter' : 'div_coil_set_lifter_1'; }
+        function getFirstStartProsesId() { return isSheetType() ? 'time_start_proses' : 'time_start_proses_1'; }
 
         // Tampilkan/sembunyikan field yang khusus Coil atau khusus Sheet.
         // Dipanggil setelah login (sessionProdType baru diketahui) dan setiap modal/pane Divide dibangun ulang.
@@ -1076,11 +1139,19 @@ function buildDividePaneHTML(idx) {
                     <label class="small text-secondary">${dc.label}</label>
                     <input type="number" class="form-control form-control-sm" id="${dc.col}_${idx}">
                 </div>`;
-            }).join('');  
+            }).join('');
 
+            // Sheet: Product Size (shared field di atas) sering berisi beberapa ukuran dipisah "/" --
+            // kotak ini menampilkan ukuran spesifik milik pane/Divide ini saja (hasil split, lihat
+            // onProductSizeInput() & updateSheetSizeDisplays()), murni tampilan/read-only, TIDAK disimpan
+            // sebagai kolom terpisah -- "product_size" tetap 1 kolom shared berisi string lengkap.
+            const sheetSizeHTML = `
+                <div class="mb-2 d-none" data-prod-only="sheet" id="sheet_size_wrap_${idx}">
+                    <label class="small text-secondary fw-bold mb-0">Product Size (Size ${idx})</label>
+                    <div class="fw-bold text-primary" id="sheet_size_display_${idx}">-</div>
+                </div>`;
 
-            return `
-            <div class="divide-pane d-none" data-divide-idx="${idx}">
+            const timeFieldsHTML = `
                 <div class="row g-3 mb-3">
                     <div class="col-md-4" id="div_coil_set_lifter_${idx}">
                         <label class="form-label fw-bold small">Coil Set Lifter</label>
@@ -1116,8 +1187,9 @@ function buildDividePaneHTML(idx) {
                         <label class="form-label fw-bold small">Total Length</label>
                         <input type="number" class="form-control form-control-sm" id="total_length_${idx}">
                     </div>
-                </div>
+                </div>`;
 
+            const downtimeHTML = `
                 <div class="card border-warning mb-3 shadow-sm">
                     <div class="card-header bg-warning bg-opacity-25 text-dark fw-bold py-2 d-flex justify-content-between align-items-center" style="font-size: 0.85rem; cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseDowntime_${idx}" role="button" aria-expanded="false">
                         <span><i class="bi bi-exclamation-triangle"></i> Downtime (Menit)</span>
@@ -1128,8 +1200,9 @@ function buildDividePaneHTML(idx) {
                             ${downtimeInputs}
                         </div>
                     </div>
-                </div>
+                </div>`;
 
+            const qtyHTML = `
                 <div class="row g-3 mb-3 d-none" data-prod-only="sheet">
                     <div class="col-6 col-md-4">
                         <label class="form-label fw-bold small">Qty FG</label>
@@ -1143,7 +1216,9 @@ function buildDividePaneHTML(idx) {
                         <label class="form-label fw-bold small">Qty Total</label>
                         <input type="number" class="form-control form-control-sm" id="qty_total_${idx}">
                     </div>
-                </div>
+                </div>`;
+
+            const ngHTML = `
                 <div class="card border-warning mb-3 shadow-sm d-none" data-prod-only="sheet">
                     <div class="card-header bg-warning bg-opacity-25 text-dark fw-bold py-2 d-flex justify-content-between align-items-center" style="font-size: 0.85rem; cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseNg_${idx}" role="button" aria-expanded="false">
                         <span><i class="bi bi-exclamation-triangle"></i> Isi Detail NG</span>
@@ -1161,8 +1236,9 @@ function buildDividePaneHTML(idx) {
                             </a>
                         </div>
                     </div>
-                </div>
+                </div>`;
 
+            const lineSpeedRemarkHTML = `
                 <div class="row g-3 mb-1">
                     <div class="col-md-3">
                         <label class="form-label fw-bold small">Line Speed</label>
@@ -1172,7 +1248,19 @@ function buildDividePaneHTML(idx) {
                         <label class="form-label fw-bold small">Remark / Catatan Tambahan</label>
                         <textarea class="form-control form-control-sm" id="remark_${idx}" rows="2"></textarea>
                     </div>
-                </div>
+                </div>`;
+
+            // Untuk Sheet: Coil Set Lifter/Start/End Proses/Product Keluar SUDAH dipindah jadi field SHARED
+            // di atas tab (lihat blok "Waktu Proses" khusus data-prod-only="sheet" sebelum #divideTabNav),
+            // jadi timeFieldsHTML TIDAK ikut disertakan di sini lagi untuk Sheet (dulu masih dirender per-Size
+            // meski di bagian bawah). Untuk Coil, urutan & isi TETAP seperti semula (waktu proses tetap per-Divide).
+            const bodyHTML = isSheetType()
+                ? (sheetSizeHTML + downtimeHTML + qtyHTML + ngHTML + lineSpeedRemarkHTML)
+                : (timeFieldsHTML + downtimeHTML + qtyHTML + ngHTML + lineSpeedRemarkHTML);
+
+            return `
+            <div class="divide-pane d-none" data-divide-idx="${idx}">
+                ${bodyHTML}
             </div>`;
         }
 
@@ -1180,9 +1268,10 @@ function buildDividePaneHTML(idx) {
         function initDivideTabs() {
             let panesHTML = '';
             let navHTML = '';
+            const tabLabel = isSheetType() ? 'Size' : 'Divide'; // Sheet pakai istilah "Size" (segmen Product Size), Coil tetap "Divide"
             for (let i = 1; i <= MAX_DIVIDE; i++) {
                 panesHTML += buildDividePaneHTML(i);
-                navHTML += `<li class="nav-item"><a class="nav-link ${i === 1 ? 'active' : ''}" href="#" data-divide-idx="${i}" onclick="showDividePane(${i}); return false;">Divide ${i}</a></li>`;
+                navHTML += `<li class="nav-item"><a class="nav-link ${i === 1 ? 'active' : ''}" href="#" data-divide-idx="${i}" onclick="showDividePane(${i}); return false;">${tabLabel} ${i}</a></li>`;
             }
             document.getElementById('divideTabContent').innerHTML = panesHTML;
             document.getElementById('divideTabNav').innerHTML = navHTML;
@@ -1204,6 +1293,43 @@ function buildDividePaneHTML(idx) {
             if (!v || v === 'No Divide') return 1;
             const n = parseInt(v);
             return (n >= 2 && n <= MAX_DIVIDE) ? n : 1;
+        }
+
+        // Sheet: pecah "Product Size" (dipisah "/", mis. "1372.0/1787.0") jadi array segmen bersih (di-trim,
+        // segmen kosong dibuang). Selalu mengembalikan minimal 1 elemen supaya tetap ada 1 pane meski
+        // Product Size masih kosong/belum diisi.
+        function getSheetSizeParts(value) {
+            const parts = String(value || '').split('/').map(s => s.trim()).filter(s => s !== '');
+            return parts.length ? parts : [''];
+        }
+
+        // Dipanggil tiap kali field Product Size diketik (oninput) -- HANYA berefek untuk Sheet (langsung
+        // return untuk Coil). Menghitung jumlah segmen "/" lalu men-set dropdown #input_devide secara
+        // OTOMATIS (dropdown-nya sendiri disembunyikan untuk Sheet lewat data-prod-only="coil", tapi
+        // elemennya tetap dipakai sebagai "state" oleh getDivideCount()/onDevideChange() yang sudah ada,
+        // supaya tidak perlu menulis ulang logika tab Divide dari nol).
+        function onProductSizeInput() {
+            if (!isSheetType()) return;
+            const el = document.querySelector('#prodForm [data-col="product_size"]');
+            const parts = getSheetSizeParts(el ? el.value : '');
+            const count = Math.min(Math.max(parts.length, 1), MAX_DIVIDE);
+            document.getElementById('input_devide').value = (count >= 2) ? String(count) : 'No Divide';
+            onDevideChange(); // ikut memanggil updateSheetSizeDisplays() di dalamnya
+        }
+
+        // Isi label "Product Size (Bagian N)" di tiap pane Sheet + kotak "Jumlah Size" dari hasil split
+        // Product Size saat ini. Murni tampilan -- TIDAK ada kolom baru yang disimpan ke database, sesuai
+        // arsitektur yang sudah ada (product_size tetap 1 kolom shared berisi string lengkap "A/B/C").
+        function updateSheetSizeDisplays() {
+            if (!isSheetType()) return;
+            const el = document.querySelector('#prodForm [data-col="product_size"]');
+            const parts = getSheetSizeParts(el ? el.value : '');
+            const countDisplay = document.getElementById('sheetSizeCountDisplay');
+            if (countDisplay) countDisplay.innerText = parts.length + ' (otomatis dari Product Size)';
+            for (let i = 1; i <= MAX_DIVIDE; i++) {
+                const displayEl = document.getElementById(`sheet_size_display_${i}`);
+                if (displayEl) displayEl.innerText = parts[i - 1] || '-';
+            }
         }
 
         function showDividePane(idx) {
@@ -1234,6 +1360,7 @@ function buildDividePaneHTML(idx) {
             });
             for (let i = 2; i <= MAX_DIVIDE; i++) clearDividePaneFields(i);
             showDividePane(1);
+            updateSheetSizeDisplays(); // refresh label Product Size per-pane (no-op untuk Coil)
         }
 
         function openModal(packingNo) {
@@ -1251,26 +1378,56 @@ function buildDividePaneHTML(idx) {
             if (group.status === 'Wait Proses') {
                 document.getElementById('input_devide').value = 'No Divide';
                 onDevideChange();
-                setTimeNow('time_start_proses_1');
-                document.getElementById('div_coil_set_lifter_1').style.display = 'none';
+                setTimeNow(getFirstStartProsesId());
+                document.getElementById(getCoilSetLifterWrapId()).style.display = 'none';
                 return modalInstance.show();
             }
 
-            document.getElementById('div_coil_set_lifter_1').style.display = 'block';
+            document.getElementById(getCoilSetLifterWrapId()).style.display = 'block';
 
-            // Isi kolom SHARED sekali saja, dari baris Divide pertama
+            // Isi kolom SHARED sekali saja, dari baris Divide pertama (untuk Sheet ini termasuk keempat
+            // kolom time_* -- lihat SHARED_DB_FIELDS_SHEET -- sehingga perlu diformat dengan formatTimeShow()
+            // sama seperti field waktu per-Divide, bukan langsung di-assign apa adanya).
             const basePd = group.items[0].prod_details;
             getSharedFields().forEach(col => {
                 const el = document.querySelector(`#prodForm [data-col="${col}"]`);
                 const v = getPdValueCI(basePd, col);
                 if (!el || v === undefined || v === null || v === '') return;
-                el.value = v;
+                el.value = col.startsWith('time_') ? formatTimeShow(v) : v;
             });
+
+            // PENTING (Sheet): "Product Size" (master input di atas) HARUS berisi string GABUNGAN semua
+            // Size ("1372.0/1787.0"), supaya jumlah tab & label tiap tab terhitung benar -- BUKAN diambil
+            // dari basePd.product_size seperti field shared lain di atas, karena SEKARANG tiap baris/Divide
+            // menyimpan product_size-nya SENDIRI-SENDIRI (cuma nilai Size-nya masing-masing, mis. baris
+            // Size 1 = "1372.0", baris Size 2 = "1787.0" -- lihat submitData()), bukan lagi string gabungan.
+            // Jadi digabung ulang di sini dari SEMUA baris (diurutkan sesuai divide_no, sama seperti
+            // group.items yang sudah di-sort di groupByPackingNo()).
+            if (isSheetType()) {
+                const productSizeEl = document.querySelector('#prodForm [data-col="product_size"]');
+                const combinedSize = group.items
+                    .map(it => getPdValueCI(it.prod_details, 'product_size'))
+                    .filter(v => v !== undefined && v !== null && v !== '')
+                    .join('/');
+                if (productSizeEl && combinedSize) productSizeEl.value = combinedSize;
+            }
             // PENTING: kolom "devide" TIDAK disimpan di database (hanya dipakai sebagai kontrol tampilan tab di frontend).
-            // Yang disimpan di database adalah "divide_no" per baris. Jadi jumlah Divide yang sebenarnya harus dihitung dari
-            // group.divideCount (jumlah baris/items untuk packing_no ini), BUKAN dibaca ulang dari basePd['devide'] (yang akan
-            // selalu undefined dan membuat dropdown selalu balik ke "No Divide" walau datanya sebenarnya punya 2+ Divide).
-            document.getElementById('input_devide').value = (group.divideCount >= 2) ? String(group.divideCount) : 'No Divide';
+            // Yang disimpan di database adalah "divide_no" per baris.
+            // - Coil: jumlah Divide dihitung dari group.divideCount (jumlah baris/items yang SUDAH ADA untuk
+            //   packing_no ini), BUKAN dibaca ulang dari basePd['devide'] (selalu undefined).
+            // - Sheet: jumlah tab HARUS dihitung dari banyaknya segmen "/" di Product Size, BUKAN semata dari
+            //   group.divideCount -- karena baris untuk bagian ke-2/3/dst bisa saja BELUM PERNAH diisi sama
+            //   sekali (baru pertama kali dibuka), sehingga group.divideCount masih 1 walau Product Size-nya
+            //   sudah menunjukkan 2+ bagian. Dipakai nilai maksimum dari keduanya supaya baris yang sudah ada
+            //   tetap ikut ter-render walau (secara tidak biasa) melebihi jumlah segmen Product Size.
+            if (isSheetType()) {
+                const productSizeEl = document.querySelector('#prodForm [data-col="product_size"]');
+                const sizeParts = getSheetSizeParts(productSizeEl ? productSizeEl.value : '');
+                const sizeCount = Math.min(Math.max(sizeParts.length, group.divideCount, 1), MAX_DIVIDE);
+                document.getElementById('input_devide').value = (sizeCount >= 2) ? String(sizeCount) : 'No Divide';
+            } else {
+                document.getElementById('input_devide').value = (group.divideCount >= 2) ? String(group.divideCount) : 'No Divide';
+            }
 
             onDevideChange(); // render jumlah tab sesuai Devide yang baru saja di-set
 
@@ -1327,6 +1484,15 @@ function buildDividePaneHTML(idx) {
                     const ngData = getNgRowsData(i);
                     row.kind_ng = ngData.kind_ng;
                     row.ng = ngData.ng;
+
+                    // PENTING: "product_size" TIDAK dikirim sebagai string gabungan ("1372.0/1787.0") ke
+                    // SEMUA baris -- tiap baris/Size harus menyimpan HANYA bagiannya sendiri (Size 1 ->
+                    // "1372.0", Size 2 -> "1787.0"), supaya kolom I di sheet cocok dengan tab Size yang
+                    // sedang dilihat, bukan string utuh yang sama persis di setiap baris. Dipecah dari
+                    // nilai master input "Product Size" yang sama (sharedPayload.product_size), bukan
+                    // dari getPerDivideFields() karena ini bukan field per-Divide di form.
+                    const sheetSizeParts = getSheetSizeParts(sharedPayload.product_size);
+                    row.product_size = sheetSizeParts[i - 1] !== undefined ? sheetSizeParts[i - 1] : '';
                 }
                 rows.push(row);
             }
@@ -1749,11 +1915,18 @@ function buildDividePaneHTML(idx) {
             });
 
             const planDivide = parseInt(planData.divide_no);
-            document.getElementById('input_devide').value = (planDivide >= 2 && planDivide <= MAX_DIVIDE) ? String(planDivide) : 'No Divide';
-            onDevideChange();
+            if (isSheetType()) {
+                // Sheet: jumlah pane dihitung OTOMATIS dari banyaknya segmen "/" di Product Size yang baru
+                // saja diisi dari data plan (bukan dari planData.divide_no, yang konsepnya cuma berlaku
+                // untuk Coil/Devide manual).
+                onProductSizeInput();
+            } else {
+                document.getElementById('input_devide').value = (planDivide >= 2 && planDivide <= MAX_DIVIDE) ? String(planDivide) : 'No Divide';
+                onDevideChange();
+            }
 
-            setTimeNow('time_start_proses_1');
-            document.getElementById('div_coil_set_lifter_1').style.display = 'block';
+            setTimeNow(getFirstStartProsesId());
+            document.getElementById(getCoilSetLifterWrapId()).style.display = 'block';
 
             modalInstance.show();
         }
