@@ -872,6 +872,15 @@
                 let endT = pd.time_end_proses ? formatTimeShow(pd.time_end_proses) : '--:--';
                 let productKeluarT = pd.time_product_keluar ? formatTimeShow(pd.time_product_keluar) : '--:--';
                 let divideBadge = g.divideCount > 1 ? `<span class="badge bg-primary bg-opacity-75 ms-1" style="font-size:0.62rem;">${g.divideCount}x Divide</span>` : '';
+                // Downtime "Packing Coil Back" adalah field PER-DIVIDE (bisa beda nilai tiap Divide) --
+                // dijumlahkan dari SEMUA baris/Divide milik packing_no ini, supaya badge menampilkan total
+                // durasi downtime Packing Coil Back untuk packing_no tsb secara keseluruhan.
+                let coilBackTotal = 0;
+                g.items.forEach(it => {
+                    const v = parseFloat(it.prod_details.dt_packing_coil_back);
+                    if (!isNaN(v)) coilBackTotal += v;
+                });
+                let coilBackBadge = coilBackTotal > 0 ? `<span class="badge bg-warning text-dark ms-1" style="font-size:0.62rem;">Coil Back ${coilBackTotal}m</span>` : '';
                 let weightActual = pd.weight_actual ? `<br><small class="text-muted">${pd.weight_actual}</small>` : '';
                 let mcSemiSize = pd['mc/Semi_prod_size'] ? `<br><small class="text-muted">${pd['mc/Semi_prod_size']}</small>` : '';
                 const rowspan = g.divideCount > 1 ? g.divideCount : 1;
@@ -883,7 +892,7 @@
                     <tr onclick="openModal('${g.packing_no}')" title="Klik baris untuk edit data">
                         <td class="text-center" style="white-space:nowrap;" rowspan="${rowspan}"><span class="status-badge ${bgClass}">${g.status}</span></td>
                         <td class="text-center" style="white-space:nowrap;" rowspan="${rowspan}">${seqLabel}</td>
-                        <td class="fw-bold text-primary" rowspan="${rowspan}">${g.packing_no}${divideBadge}${weightActual}</td>
+                        <td class="fw-bold text-primary" rowspan="${rowspan}">${g.packing_no}${divideBadge}${coilBackBadge}${weightActual}</td>
                         <td rowspan="${rowspan}">${p.customer}${mcSemiSize}</td>
                         <td rowspan="${rowspan}"><small>${p.spec}<br><b>${p.size}</b></small></td>
                         <td class="text-center">${coilSetLifterT}</td>
