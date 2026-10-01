@@ -819,7 +819,7 @@
                     // mentahnya; penyebab umum: kuota "simultaneous invocations" kepenuhan (banyak tablet
                     // refresh bersamaan) atau deployment butuh otorisasi ulang.
                     console.error("RAW Data dari GAS (getProductionScreen):", text);
-                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4"><b>Error Database:</b><br>Server mengirim balasan yang tidak valid (bukan JSON). Cek Console F12 untuk detail respons mentahnya.</td></tr>`;
+                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4"><b>Error Database:</b><br>Jaringan WiFi tidak stabil, Cek Console F12 untuk detail .</td></tr>`;
                 }
             })
             .catch(err => console.error(err));
